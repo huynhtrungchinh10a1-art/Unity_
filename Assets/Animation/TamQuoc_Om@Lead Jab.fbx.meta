@@ -57,14 +57,14 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.38095242
+      - time: 0.49567106
         functionName: OpenComboWindow
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.78738856
+      - time: 0.73327607
         functionName: CloseComboWindow
         data: 
         objectReferenceParameter: {instanceID: 0}

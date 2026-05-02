@@ -5,7 +5,7 @@ public class PlayerCombat : MonoBehaviour
     bool isAttacking = false;
     bool canQueueCombo = false;
 
-    float bufferTime = 0.2f;
+    float bufferTime = 0.1f;
     float bufferTimer = 0f;
 
     void Update()
