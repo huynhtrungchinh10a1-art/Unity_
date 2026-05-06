@@ -4,7 +4,6 @@ using UnityEngine;
 public class SimpleTester : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("Kéo cục CameraPivot (chứa script ThirdPersonCamera) vào đây")]
     public ThirdPersonCamera cam;
     public Animator anim;
 
@@ -17,35 +16,96 @@ public class SimpleTester : MonoBehaviour
     [Header("Rotation")]
     public float rotationSpeed = 10f;
 
-    [Header("Combat Test")]
-    [Tooltip("Đổi số này để test các đòn chém khác nhau (0 = Slash 1, 1 = Slash 2...)")]
-    public int defaultAttackIndex = 0;
+    [Header("Block Settings")] // Thêm settings cho block
+    public bool isBlocking = false; // Có thể set từ Inspector hoặc code
+
+    private float verticalVelocity;
 
     void Start()
     {
         if (anim == null) anim = GetComponentInChildren<Animator>();
         controller = GetComponent<CharacterController>();
 
-        // FIX LỖI SETUP 1: Ép tắt Root Motion ngay khi bắt đầu game để chắc chắn có thể đi bộ
         anim.applyRootMotion = false;
     }
 
     void Update()
     {
-        // FIX LỖI CODE 2: Đưa lệnh check chuột trái LÊN TRÊN CÙNG.
-        // Để dù nhân vật có đang lướt chém, bác vẫn có thể bấm phím để nối Combo tiếp.
-        if (Input.GetMouseButtonDown(0))
+        // ================= ATTACK TEST (0 → 5) =================
+        for (int i = 0; i <= 5; i++)
         {
-            anim.SetInteger("AttackIndex", defaultAttackIndex);
-            anim.SetTrigger("DoAttack");
-            Debug.Log("Đã bấm chém đòn số: " + defaultAttackIndex);
+            if (Input.GetKeyDown(i.ToString()))
+            {
+                anim.SetInteger("AttackIndex", i);
+                anim.SetTrigger("DoAttack");
+
+                Debug.Log("Attack index: " + i);
+            }
         }
 
-        // CHẶN DI CHUYỂN: Nằm ở vị trí này mới chuẩn! 
-        // Bấm chuột xong rồi thì mới khóa WASD.
+        // ================= DEAD TEST (U, I, O) =================
+        if (Input.GetKeyDown(KeyCode.U))
+        {
+            anim.SetInteger("DeadIndex", 0); // Sword And Shield Death
+            anim.SetTrigger("DoDead");
+            Debug.Log("Dead: Sword And Shield Death");
+        }
+
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            anim.SetInteger("DeadIndex", 1); // Flying Back Death
+            anim.SetTrigger("DoDead");
+            Debug.Log("Dead: Flying Back Death");
+        }
+
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            anim.SetInteger("DeadIndex", 2); // Sword And Shield Death2
+            anim.SetTrigger("DoDead");
+            Debug.Log("Dead: Sword And Shield Death2");
+        }
+
+        // ================= IMPACT TEST Z với IsBlocked check =================
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            // QUAN TRỌNG: Set IsBlocked TRƯỚC trigger
+            anim.SetBool("IsBlocked", isBlocking);
+
+            // Debug kiểm tra giá trị đã được set chưa
+            Debug.Log($"Set IsBlocked = {isBlocking}");
+
+            // Sau đó mới trigger
+            anim.SetTrigger("DoBlock");
+        }
+
+
+
+
+
+        // ================= TOGGLE BLOCK MODE (thêm phím B để bật/tắt trạng thái blocking) =================
+        if (Input.GetKeyDown(KeyCode.B))
+        {
+            isBlocking = !isBlocking;
+            Debug.Log("Block mode: " + (isBlocking ? "ON" : "OFF"));
+        }
+
+        // ================= ROOT MOTION CONTROL =================
+        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+        AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
+
+        bool isUsingRootMotion =
+            state.IsTag("Combo") ||
+            state.IsTag("Dead") ||    // Thêm tag Dead
+            state.IsTag("Impact") ||  // Thêm tag Impact
+            (anim.IsInTransition(0) &&
+                (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact")));
+
+        anim.applyRootMotion = isUsingRootMotion;
+
+        // ================= CHẶN MOVEMENT KHI ATTACK/DEAD/IMPACT =================
         if (anim.applyRootMotion) return;
 
-        // ---------------- 1. TEST DI CHUYỂN THEO CAMERA ----------------
+        // ================= MOVEMENT =================
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
@@ -53,12 +113,7 @@ public class SimpleTester : MonoBehaviour
         float inputMagnitude = inputDir.magnitude;
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float targetSpeed = 0f;
-
-        if (inputMagnitude > 0.1f)
-        {
-            targetSpeed = isRunning ? runSpeed : walkSpeed;
-        }
+        float targetSpeed = inputMagnitude > 0.1f ? (isRunning ? runSpeed : walkSpeed) : 0f;
 
         Vector3 moveDir = Vector3.zero;
 
@@ -69,6 +124,7 @@ public class SimpleTester : MonoBehaviour
 
             camForward.y = 0;
             camRight.y = 0;
+
             camForward.Normalize();
             camRight.Normalize();
 
@@ -77,7 +133,11 @@ public class SimpleTester : MonoBehaviour
             if (moveDir != Vector3.zero)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRotation,
+                    rotationSpeed * Time.deltaTime
+                );
             }
         }
         else
@@ -85,20 +145,26 @@ public class SimpleTester : MonoBehaviour
             moveDir = transform.right * inputDir.x + transform.forward * inputDir.z;
         }
 
-        // Apply di chuyển bằng phím (Chỉ chạy khi không chém)
-        controller.SimpleMove(moveDir * targetSpeed);
+        // gravity
+        if (controller.isGrounded)
+            verticalVelocity = -2f;
+        else
+            verticalVelocity -= 9.81f * Time.deltaTime;
+
+        Vector3 finalMove = moveDir * targetSpeed;
+        finalMove.y = verticalVelocity;
+
+        controller.Move(finalMove * Time.deltaTime);
+
         anim.SetFloat("Speed", targetSpeed, 0.1f, Time.deltaTime);
     }
 
     void OnAnimatorMove()
     {
-        // Chỉ áp dụng Root Motion khi Animator cho phép (Script RootMotionToggle ở bài trước bật lên)
-        if (anim.applyRootMotion)
-        {
-            Vector3 delta = anim.deltaPosition;
-            // delta.y = 0f; // Bỏ comment dòng này ra nếu bác không muốn nhân vật bay nhảy lên trời
-            controller.Move(delta);
-            transform.rotation *= anim.deltaRotation;
-        }
+        if (!anim.applyRootMotion) return;
+
+        Vector3 delta = anim.deltaPosition;
+        controller.Move(delta);
+        transform.rotation *= anim.deltaRotation;
     }
 }

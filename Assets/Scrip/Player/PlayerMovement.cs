@@ -78,7 +78,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // MOVEMENT
-        if (!combat.IsAttacking() && !isTurning && isMoving)
+        if (!anim.applyRootMotion && isMoving)
         {
             inputDir.Normalize();
 
@@ -88,10 +88,22 @@ public class PlayerMovement : MonoBehaviour
                 HandleFreeMovement(inputDir, speed);
         }
 
-        HandleGravity();
+        if (!anim.applyRootMotion) HandleGravity();
+
         UpdateAnimator(inputDir, isRunning);
 
         anim.SetBool("IsRunning", isRunning);
+
+        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+        AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
+
+        bool isUsingRootMotion =
+            combat.IsAttacking() ||
+            isTurning ||
+            state.IsTag("Combo") ||
+            (anim.IsInTransition(0) && next.IsTag("Combo"));
+
+        anim.applyRootMotion = isUsingRootMotion;
     }
 
     // FREE MODE
@@ -205,8 +217,13 @@ public class PlayerMovement : MonoBehaviour
 
     void OnAnimatorMove()
     {
+        if (!anim.applyRootMotion) return;
+
         Vector3 delta = anim.deltaPosition;
         delta.y = 0f;
+
         controller.Move(delta);
+
+        transform.rotation *= anim.deltaRotation;
     }
 }

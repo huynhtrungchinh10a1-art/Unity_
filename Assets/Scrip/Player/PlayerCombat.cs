@@ -69,6 +69,7 @@ public class PlayerCombat : MonoBehaviour
     }
     public bool IsAttacking()
     {
-        return isAttacking;
+        return anim.GetCurrentAnimatorStateInfo(0).IsTag("Combo")
+            || anim.IsInTransition(0);
     }
 }
