@@ -16,17 +16,20 @@ public class HealthAndTeam : MonoBehaviour
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth;
+    public bool isAlive = true;
 
     public int attackerCount = 0;
     public List<GameObject> currentAttackers = new List<GameObject>();
 
-    public bool isAlive = true;
     public System.Action<GameObject, float> onDamaged;
-    public System.Action onDied;
+    public System.Action onDie;
+
+    private ActiveDefense defense;
 
     void Awake()
     {
         currentHealth = maxHealth;
+        defense = GetComponent<ActiveDefense>();
     }
     public void ChangeTeam(Team newTeam)
     {
@@ -34,24 +37,35 @@ public class HealthAndTeam : MonoBehaviour
 
         teamCurrent = newTeam;
     }
-    public void TakeDamage(float damage, GameObject attacker)
+    public bool TakeDamage(float damage, GameObject attacker)
     {
-        if (!isAlive) return;
+        if (!isAlive) return false;
 
-        currentHealth -= damage;
+        float finalDamage = damage;
+        bool isBlocked = false;
+
+        if (defense != null)
+        {
+            isBlocked = defense.TryBlock(ref finalDamage);
+        }
+
+        currentHealth -= finalDamage;
         onDamaged?.Invoke(attacker, damage);
 
         if (currentHealth <= 0)
         {
             Die();
         }
+
+        return isBlocked;
     }
     void Die()
     {
         isAlive = false;
         NotifyAllAttackers();
-        onDied?.Invoke();
+        onDie?.Invoke();
     }
+
     void NotifyAllAttackers()
     {
         foreach (var attacker in currentAttackers)
@@ -68,6 +82,14 @@ public class HealthAndTeam : MonoBehaviour
         currentAttackers.Clear();
         attackerCount = 0;
     }
+
+    public bool IsEnemy(Team otherTeam)
+    {
+        if (this.teamCurrent == Team.Neutral || otherTeam == Team.Neutral)
+            return false;
+        return this.teamCurrent != otherTeam;
+    }
+
     public void AddAttacker(GameObject attacker)
     {
         if (!isAlive) return;

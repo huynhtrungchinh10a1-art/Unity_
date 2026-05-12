@@ -2,13 +2,19 @@ using UnityEngine;
 
 public class AttackStateExit : StateMachineBehaviour
 {
-    PlayerCombat combat;
 
     override public void OnStateMachineExit(Animator animator, int stateMachinePathHash)
     {
-        if (combat == null)
-            combat = animator.GetComponentInParent<PlayerCombat>();
+        PlayerCombat combat = animator.GetComponentInParent<PlayerCombat>();
+        if (combat != null)
+        {
+            combat.ForceStopAttack();
+        }
 
-        combat.ForceStopAttack();
+        NPCCombat npcCombat = animator.GetComponentInParent<NPCCombat>();
+        if (npcCombat != null)
+        {
+            animator.SetBool("IsBlocked", false);
+        }
     }
 }
