@@ -61,6 +61,8 @@ public class NPCCombat : MonoBehaviour
     private float currentChaseRange;
     private float ignorePlayerPriorityTimer;
     public float ignoreDuration = 3f;
+    public float rollCooldown = 5f;
+    private float rollTimer = 0f;
 
     // fury
     private bool isFuryMode;
@@ -178,7 +180,6 @@ public class NPCCombat : MonoBehaviour
                 noTargetTimer = 0;
             }
         }
-        // tu tu roi reset
         else
         {
             noTargetTimer = 0;
@@ -265,7 +266,7 @@ public class NPCCombat : MonoBehaviour
 
         if (!ignorePlayerPriority && enemy.CompareTag("Player"))
         {
-            score -= 999f;
+            score -= 1.5f;
         }
 
         return score;
@@ -416,6 +417,13 @@ public class NPCCombat : MonoBehaviour
             ignorePlayerPriority = true;
             ignorePlayerPriorityTimer = ignoreDuration;
         }
+
+        // tam thoi de la 3 di xem co nhay nhieu ko
+        if (myHealth.currentAttackers.Count >= 3 && Time.time >= rollTimer)
+        {
+            anim.SetTrigger("DoRoll"); 
+            rollTimer = Time.time + rollCooldown; 
+        }
     }
 
     public void OnTargetDied(GameObject deadTarget)
@@ -447,6 +455,7 @@ public class NPCCombat : MonoBehaviour
             state.IsTag("Combo") ||
             state.IsTag("Dead") ||
             state.IsTag("Impact") ||
+            state.IsTag("Roll") ||
             (anim.IsInTransition(0) &&
                 (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact")));
 

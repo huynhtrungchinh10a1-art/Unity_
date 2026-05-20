@@ -628,7 +628,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0.65, z: 0}
+  m_Center: {x: 0, y: 0.65, z: -0.03}
 --- !u!114 &1931856272950024225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -676,9 +676,9 @@ MonoBehaviour:
   teamCurrent: 1
   maxHealth: 100
   currentHealth: 0
+  isAlive: 1
   attackerCount: 0
   currentAttackers: []
-  isAlive: 1
 --- !u!4 &8942047417825239660 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2563496969622287784, guid: f4dc3e85787ca2042b92c90fbbb011ff,
