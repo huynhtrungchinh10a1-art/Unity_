@@ -24,6 +24,7 @@ public class ActiveDefense : MonoBehaviour
         characterLayerMask = LayerMask.GetMask("Character");
     }
 
+    // chay khi attack
     public void AnimEvent_WarnAttack()
     {
         Vector3 checkPos = transform.position + transform.forward * warningOffset;
@@ -39,15 +40,31 @@ public class ActiveDefense : MonoBehaviour
                 ActiveDefense targetDefense = hitCollider.GetComponent<ActiveDefense>();
                 if (targetDefense != null)
                 {
-                    targetDefense.ReactToWarning();
+                    targetDefense.ReactToWarning(gameObject);
                 }
             }
         }
     }
 
-    public void ReactToWarning()
+    // chay khi phong thu
+    public void ReactToWarning(GameObject attacker = null)
     {
+        if (anim != null && anim.GetCurrentAnimatorStateInfo(0).IsTag("Roll"))
+        {
+            return;
+        }
+
         bool isBlocking = Random.value < blockChance;
+
+        if (isBlocking && attacker != null)
+        {
+            Vector3 dir = (attacker.transform.position - transform.position);
+            dir.y = 0;
+            if (dir.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.LookRotation(dir.normalized);
+            }
+        }
 
         if (anim != null)
         {

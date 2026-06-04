@@ -19,12 +19,15 @@ public class NPCCombat : MonoBehaviour
     public float switchTargetCooldown = 2f;
     public float outnumberedCooldownMultiplier = 0.5f;
     public float commitLockTime = 1.2f;
+    public int maxAttackersPerTarget = 3;
 
     [Header("Scoring (Global)")]
-    public float weightAttackerCount = 0.6f;
-    public float weightDistance = 0.4f;
+    public float weightAttackerCount = 0.75f;
+    public float weightDistance = 0.25f;
     public float hysteresisBonus = 0.15f;
     public float maxExpectedAttackers = 5f;
+    public float weightThreat = 0.35f;
+    public float maxThreatForNorm = 50f;
 
     [Header("Reactive")]
     public float reactiveBase = 0.5f;
@@ -42,6 +45,7 @@ public class NPCCombat : MonoBehaviour
     public float rotationSpeed = 5f;
     public float attackAngle = 30f;
     public float attackCooldownTimer = 0f;
+
     private CharacterController controller;
     private float verticalVelocity;
 
@@ -74,6 +78,12 @@ public class NPCCombat : MonoBehaviour
     private LayerMask characterLayerMask;
 
     private List<HealthAndTeam> visibleEnemies = new List<HealthAndTeam>();
+    private List<Collider> ignoredColliders = new List<Collider>();
+    private bool wasRollingLastFrame = false;
+
+    // Grid
+    private Vector2Int currentGridCell;
+    private bool isRegisteredInGrid = false;
 
     // random
     private float scanOffset;
@@ -126,6 +136,22 @@ public class NPCCombat : MonoBehaviour
             if (ignorePlayerPriorityTimer <= 0)
             {
                 ignorePlayerPriority = false;
+            }
+        }
+
+        if (BattlefieldManager.Instance != null && myHealth.isAlive)
+        {
+            Vector2Int newCell = BattlefieldManager.Instance.GetCell(transform.position);
+            if (!isRegisteredInGrid)
+            {
+                BattlefieldManager.Instance.RegisterNPC(this, newCell);
+                currentGridCell = newCell;
+                isRegisteredInGrid = true;
+            }
+            else if (newCell != currentGridCell)
+            {
+                BattlefieldManager.Instance.UpdateNPCPosition(this, currentGridCell, newCell);
+                currentGridCell = newCell;
             }
         }
 
@@ -231,6 +257,19 @@ public class NPCCombat : MonoBehaviour
             if (enemy == currentTargetHealth)
                 score -= hysteresisBonus;
 
+            // skip target da day nguoi
+            bool isMyCurrentTarget = (enemy == currentTargetHealth);
+            bool isFull = enemy.attackerCount >= maxAttackersPerTarget;
+
+            if (isFull && !isMyCurrentTarget)
+                continue;
+
+            // skip neu zone day
+            if (BattlefieldManager.Instance != null && BattlefieldManager.Instance.IsZoneCrowded(enemy.transform.position))
+            {
+                if (!isMyCurrentTarget) continue;
+            }
+
             if (score < bestScore)
             {
                 bestScore = score;
@@ -260,9 +299,14 @@ public class NPCCombat : MonoBehaviour
         float dist = Vector3.Distance(transform.position, enemy.transform.position);
         float normDist = Mathf.Clamp01(dist / currentDetectionRange);
 
+        // threat: uu tien th dang danh minh
+        float threat = myHealth.GetThreat(enemy.gameObject);
+        float normThreat = Mathf.Clamp01(threat / maxThreatForNorm);
+
         float score =
         (normAtt * weightAttackerCount) +
-        (normDist * weightDistance);
+        (normDist * weightDistance) -
+        (normThreat * weightThreat);
 
         if (!ignorePlayerPriority && enemy.CompareTag("Player"))
         {
@@ -331,7 +375,8 @@ public class NPCCombat : MonoBehaviour
 
         if (dist > attackRange)
         {
-            agent.SetDestination(currentTarget.position);
+            Vector3 dest = currentTarget.position;
+            agent.SetDestination(dest);
 
             Vector3 desiredVelocity = agent.desiredVelocity;
             desiredVelocity.y = verticalVelocity;
@@ -351,6 +396,7 @@ public class NPCCombat : MonoBehaviour
         {
             // dung yen quay mat
             agent.ResetPath();
+
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
 
             Vector3 dirToTarget = (currentTarget.position - transform.position);
@@ -418,11 +464,18 @@ public class NPCCombat : MonoBehaviour
             ignorePlayerPriorityTimer = ignoreDuration;
         }
 
-        // tam thoi de la 3 di xem co nhay nhieu ko
-        if (myHealth.currentAttackers.Count >= 3 && Time.time >= rollTimer)
+        // roll
+        if (myHealth.currentAttackers.Count >= 2 && Time.time >= rollTimer)
         {
-            anim.SetTrigger("DoRoll"); 
-            rollTimer = Time.time + rollCooldown; 
+            float healthPercent = myHealth.currentHealth / myHealth.maxHealth;
+            // mau 100% - 20%, mau 20% - 80% 
+            float rollChance = Mathf.Lerp(0.8f, 0.3f, healthPercent);
+            // float rollChance = 1.2f;
+            if (Random.value < rollChance)
+            {
+                anim.SetTrigger("DoRoll");
+                rollTimer = Time.time + rollCooldown;
+            }
         }
     }
 
@@ -434,6 +487,15 @@ public class NPCCombat : MonoBehaviour
 
     public void OnDie()
     {
+        ClearTarget();
+        myHealth.threatMap.Clear();
+
+        if (isRegisteredInGrid && BattlefieldManager.Instance != null)
+        {
+            BattlefieldManager.Instance.UnregisterNPC(this, currentGridCell);
+            isRegisteredInGrid = false;
+        }
+
         if (anim != null)
         {
             int deadIndex = Random.Range(0, 3);
@@ -535,9 +597,81 @@ public class NPCCombat : MonoBehaviour
         Vector3 delta = anim.deltaPosition;
         delta.y += verticalVelocity * Time.deltaTime;
 
-        controller.Move(delta);
-        transform.rotation *= anim.deltaRotation;
+        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+        bool isRolling = state.IsTag("Roll");
 
+        if (isRolling)
+        {
+            int characterLayer = LayerMask.NameToLayer("Character");
+            if (characterLayer != -1)
+            {
+                Collider[] nearby = Physics.OverlapSphere(transform.position, 3f, 1 << characterLayer);
+                foreach (var col in nearby)
+                {
+                    if (col != controller && col.gameObject != gameObject)
+                    {
+                        Physics.IgnoreCollision(controller, col, true);
+                        if (!ignoredColliders.Contains(col))
+                            ignoredColliders.Add(col);
+                    }
+                }
+            }
+
+            controller.Move(delta);
+            wasRollingLastFrame = true;
+        }
+        else
+        {
+            if (wasRollingLastFrame)
+            {
+                foreach (var col in ignoredColliders)
+                {
+                    if (col != null)
+                        Physics.IgnoreCollision(controller, col, false);
+                }
+                ignoredColliders.Clear();
+                wasRollingLastFrame = false;
+            }
+
+            // Separation Force
+            Vector3 separation = Vector3.zero;
+            if (BattlefieldManager.Instance != null)
+            {
+                List<NPCCombat> allies = BattlefieldManager.Instance.GetNPCsInCell(transform.position);
+                if (allies != null)
+                {
+                    int count = 0;
+                    foreach (NPCCombat ally in allies)
+                    {
+                        if (ally != this && ally.myHealth.isAlive && !myHealth.IsEnemy(ally.myHealth.teamCurrent))
+                        {
+                            float dist = Vector3.Distance(transform.position, ally.transform.position);
+                            if (dist < 1.5f && dist > 0.01f)
+                            {
+                                Vector3 dir = (transform.position - ally.transform.position).normalized;
+                                separation += dir * (1.5f - dist);
+                                count++;
+                            }
+                        }
+                    }
+                    if (count > 0)
+                    {
+                        separation /= count;
+                        // chặn đẩy lùi
+                        float dot = Vector3.Dot(separation, transform.forward);
+                        if (dot < 0)
+                        {
+                            separation -= transform.forward * dot;
+                        }
+                        delta += separation * Time.deltaTime * 5f;
+                    }
+                }
+            }
+
+            controller.Move(delta);
+        }
+
+        transform.rotation *= anim.deltaRotation;
         agent.nextPosition = transform.position;
     }
 

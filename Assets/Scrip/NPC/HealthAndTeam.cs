@@ -21,6 +21,10 @@ public class HealthAndTeam : MonoBehaviour
     public int attackerCount = 0;
     public List<GameObject> currentAttackers = new List<GameObject>();
 
+    // Threat tracking
+    public Dictionary<GameObject, float> threatMap = new Dictionary<GameObject, float>();
+    public float threatDecayRate = 5f;
+
     public System.Action<GameObject, float> onDamaged;
     public System.Action onDie;
 
@@ -30,6 +34,11 @@ public class HealthAndTeam : MonoBehaviour
     {
         currentHealth = maxHealth;
         defense = GetComponent<ActiveDefense>();
+    }
+
+    void Update()
+    {
+        DecayThreats();
     }
     public void ChangeTeam(Team newTeam)
     {
@@ -41,6 +50,12 @@ public class HealthAndTeam : MonoBehaviour
     {
         if (!isAlive) return false;
 
+        Animator anim = GetComponent<Animator>();
+        if (anim != null && anim.GetCurrentAnimatorStateInfo(0).IsTag("Roll"))
+        {
+            return false;
+        }
+
         float finalDamage = damage;
         bool isBlocked = false;
 
@@ -50,6 +65,7 @@ public class HealthAndTeam : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
+        AddThreat(attacker, damage);
         onDamaged?.Invoke(attacker, damage);
 
         if (currentHealth <= 0)
@@ -88,6 +104,37 @@ public class HealthAndTeam : MonoBehaviour
         if (this.teamCurrent == Team.Neutral || otherTeam == Team.Neutral)
             return false;
         return this.teamCurrent != otherTeam;
+    }
+
+    // Threat methods
+    public void AddThreat(GameObject source, float amount)
+    {
+        if (source == null) return;
+        if (threatMap.ContainsKey(source))
+            threatMap[source] += amount;
+        else
+            threatMap[source] = amount;
+    }
+
+    public float GetThreat(GameObject source)
+    {
+        if (source != null && threatMap.ContainsKey(source))
+            return threatMap[source];
+        return 0f;
+    }
+
+    void DecayThreats()
+    {
+        if (threatMap.Count == 0) return;
+
+        var keys = new List<GameObject>(threatMap.Keys);
+        foreach (var key in keys)
+        {
+            if (key == null) { threatMap.Remove(key); continue; }
+            threatMap[key] -= threatDecayRate * Time.deltaTime;
+            if (threatMap[key] <= 0f)
+                threatMap.Remove(key);
+        }
     }
 
     public void AddAttacker(GameObject attacker)

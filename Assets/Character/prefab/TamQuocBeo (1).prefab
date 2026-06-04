@@ -947,6 +947,7 @@ MonoBehaviour:
   isAlive: 1
   attackerCount: 0
   currentAttackers: []
+  threatDecayRate: 5
 --- !u!114 &7656664835838591549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -969,10 +970,13 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
-  weightAttackerCount: 0.6
-  weightDistance: 0.4
+  maxAttackersPerTarget: 3
+  weightAttackerCount: 0.75
+  weightDistance: 0.25
   hysteresisBonus: 0.15
   maxExpectedAttackers: 5
+  weightThreat: 0.35
+  maxThreatForNorm: 50
   reactiveBase: 0.5
   reactiveDamageScale: 0.3
   furyDuration: 3
@@ -985,6 +989,7 @@ MonoBehaviour:
   attackAngle: 30
   attackCooldownTimer: 0
   ignoreDuration: 3
+  rollCooldown: 5
 --- !u!114 &3472839125550949783
 MonoBehaviour:
   m_ObjectHideFlags: 0
