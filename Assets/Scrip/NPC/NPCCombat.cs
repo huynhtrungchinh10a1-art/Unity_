@@ -167,7 +167,18 @@ public class NPCCombat : MonoBehaviour
         {
             HealthAndTeam h = hit.GetComponent<HealthAndTeam>();
             if (IsValidEnemy(h))
+            {
+                // Neu o do bi qua tai, chi giu lai neu do la target hien tai
+                if (BattlefieldManager.Instance != null && BattlefieldManager.Instance.IsZoneCrowded(h.transform.position))
+                {
+                    if (h != currentTargetHealth)
+                    {
+                        continue;
+                    }
+                }
+
                 visibleEnemies.Add(h);
+            }
         }
 
         HandleExpansion();
@@ -264,10 +275,13 @@ public class NPCCombat : MonoBehaviour
             if (isFull && !isMyCurrentTarget)
                 continue;
 
-            // skip neu zone day
+            // neu zone day, cong them diem phat lon de uu tien cac zone trong hon
             if (BattlefieldManager.Instance != null && BattlefieldManager.Instance.IsZoneCrowded(enemy.transform.position))
             {
-                if (!isMyCurrentTarget) continue;
+                if (!isMyCurrentTarget)
+                {
+                    score += 5.0f;
+                }
             }
 
             if (score < bestScore)
@@ -675,4 +689,28 @@ public class NPCCombat : MonoBehaviour
         agent.nextPosition = transform.position;
     }
 
+    // test
+    void OnDrawGizmosSelected()
+    {
+        // Draw detection range (Scan circle)
+        Gizmos.color = Color.yellow;
+        float detectionRadius = Application.isPlaying ? currentDetectionRange : baseDetectionRange;
+        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+
+        // Draw chase range
+        Gizmos.color = Color.cyan;
+        float chaseRadius = Application.isPlaying ? currentChaseRange : chaseRange;
+        Gizmos.DrawWireSphere(transform.position, chaseRadius);
+
+        // Draw attack range
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        // Draw a line to the current target if it exists
+        if (currentTarget != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(transform.position, currentTarget.position);
+        }
+    }
 }
