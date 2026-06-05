@@ -1,7 +1,6 @@
 using UnityEngine;
 
 [RequireComponent(typeof(HealthAndTeam))]
-[RequireComponent(typeof(Animator))]
 public class ActiveDefense : MonoBehaviour
 {
     [Header("warning")]
@@ -12,13 +11,13 @@ public class ActiveDefense : MonoBehaviour
     [Header("defense")]
     public float blockChance = 0.5f;
 
-    private Animator anim;
+    private NPCAnimatorHandler animHandler;
     private HealthAndTeam myHealth;
     private NPCCombat myCombat;
 
     void Awake()
     {
-        anim = GetComponent<Animator>();
+        animHandler = GetComponent<NPCAnimatorHandler>();
         myHealth = GetComponent<HealthAndTeam>();
         myCombat = GetComponent<NPCCombat>();
         characterLayerMask = LayerMask.GetMask("Character");
@@ -49,7 +48,7 @@ public class ActiveDefense : MonoBehaviour
     // chay khi phong thu
     public void ReactToWarning(GameObject attacker = null)
     {
-        if (anim != null && anim.GetCurrentAnimatorStateInfo(0).IsTag("Roll"))
+        if (animHandler != null && animHandler.IsRolling)
         {
             return;
         }
@@ -66,21 +65,15 @@ public class ActiveDefense : MonoBehaviour
             }
         }
 
-        if (anim != null)
+        if (animHandler != null)
         {
-            anim.SetTrigger("DoBlock");
-            anim.SetBool("IsBlocked", isBlocking);
-
-            if (isBlocking)
-            {
-                anim.ResetTrigger("DoAttack");
-            }
+            animHandler.PlayBlock(isBlocking);
         }
     }
 
     public bool TryBlock(ref float damage)
     {
-        if (anim != null && anim.GetBool("IsBlocked"))
+        if (animHandler != null && animHandler.IsBlocked())
         {
             damage = 0f;
             ResetCooldowns();

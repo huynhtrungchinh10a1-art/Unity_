@@ -36,8 +36,7 @@ public class NPCCombat : MonoBehaviour
     [Header("Fury")]
     public float furyDuration = 3f;
 
-    [Header("Animation Settings")]
-    public Animator anim;
+    [Header("Movement & Attack")]
     public float walkSpeed = 2.5f;
     public float runSpeed = 5.0f;
     public float runDistanceRatio = 1.5f;
@@ -45,12 +44,23 @@ public class NPCCombat : MonoBehaviour
     public float rotationSpeed = 5f;
     public float attackAngle = 30f;
     public float attackCooldownTimer = 0f;
+    public float kiteRange = 8f;
+
+    [Header("Separation")]
+    public float separationDistance = 2.5f;
+    public float separationForce = 5f;
 
     private CharacterController controller;
     private float verticalVelocity;
 
     private NavMeshAgent agent;
     private HealthAndTeam myHealth;
+    private NPCAnimatorHandler animHandler;
+
+    // Public properties cho NPCAnimatorHandler đọc
+    public HealthAndTeam MyHealth { get { return myHealth; } }
+    public float VerticalVelocity { get { return verticalVelocity; } }
+    public Transform CurrentTarget { get { return currentTarget; } }
 
     // target
     private Transform currentTarget;
@@ -78,8 +88,6 @@ public class NPCCombat : MonoBehaviour
     private LayerMask characterLayerMask;
 
     private List<HealthAndTeam> visibleEnemies = new List<HealthAndTeam>();
-    private List<Collider> ignoredColliders = new List<Collider>();
-    private bool wasRollingLastFrame = false;
 
     // Grid
     private Vector2Int currentGridCell;
@@ -93,7 +101,7 @@ public class NPCCombat : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         controller = GetComponent<CharacterController>();
         myHealth = GetComponent<HealthAndTeam>();
-        anim = GetComponentInChildren<Animator>();
+        animHandler = GetComponent<NPCAnimatorHandler>();
 
         characterLayerMask = LayerMask.GetMask("Character");
 
@@ -116,7 +124,10 @@ public class NPCCombat : MonoBehaviour
     void Update()
     {
         HandleFury();
-        HandleAnimationRootMotion();
+
+        if (animHandler != null)
+            animHandler.UpdateRootMotionState();
+
         UpdateAnimationSpeed();
         HandleAttack();
 
@@ -362,7 +373,7 @@ public class NPCCombat : MonoBehaviour
 
     void HandleMovement()
     {
-        if (anim != null && anim.applyRootMotion) return;
+        if (animHandler != null && animHandler.IsUsingRootMotion) return;
 
         if (controller.isGrounded)
             verticalVelocity = -2f;
@@ -383,6 +394,42 @@ public class NPCCombat : MonoBehaviour
         {
             ClearTarget();
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
+            agent.nextPosition = transform.position;
+            return;
+        }
+
+        // Thả diều (Kiting) cho Cung thủ
+        if (animHandler is ArcherAnimatorHandler && dist < kiteRange)
+        {
+            Vector3 fleeDirection = (transform.position - currentTarget.position).normalized;
+            fleeDirection.y = 0;
+            Vector3 fleePosition = transform.position + fleeDirection * 5f;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(fleePosition, out hit, 5f, NavMesh.AllAreas))
+            {
+                agent.SetDestination(hit.position);
+            }
+            else
+            {
+                agent.SetDestination(fleePosition);
+            }
+
+            agent.speed = runSpeed;
+
+            Vector3 desiredVelocity = agent.desiredVelocity;
+            desiredVelocity.y = verticalVelocity;
+            controller.Move(desiredVelocity * Time.deltaTime);
+
+            Vector3 moveDir = agent.desiredVelocity;
+            moveDir.y = 0;
+            if (moveDir.sqrMagnitude > 0.01f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(moveDir);
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+            }
+
             agent.nextPosition = transform.position;
             return;
         }
@@ -487,7 +534,8 @@ public class NPCCombat : MonoBehaviour
             // float rollChance = 1.2f;
             if (Random.value < rollChance)
             {
-                anim.SetTrigger("DoRoll");
+                if (animHandler != null)
+                    animHandler.PlayRoll();
                 rollTimer = Time.time + rollCooldown;
             }
         }
@@ -510,54 +558,28 @@ public class NPCCombat : MonoBehaviour
             isRegisteredInGrid = false;
         }
 
-        if (anim != null)
+        if (animHandler != null)
         {
             int deadIndex = Random.Range(0, 3);
-            anim.SetInteger("DeadIndex", deadIndex);
-            anim.SetTrigger("DoDead");
+            animHandler.PlayDeath(deadIndex);
         }
         agent.isStopped = true;
         enabled = false;
     }
 
-    void HandleAnimationRootMotion()
-    {
-        if (anim == null) return;
-
-        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
-        AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
-
-        bool isUsingRootMotion =
-            state.IsTag("Combo") ||
-            state.IsTag("Dead") ||
-            state.IsTag("Impact") ||
-            state.IsTag("Roll") ||
-            (anim.IsInTransition(0) &&
-                (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact")));
-
-        anim.applyRootMotion = isUsingRootMotion;
-
-        if (isUsingRootMotion)
-        {
-            agent.ResetPath();
-        }
-
-        agent.nextPosition = transform.position;
-    }
-
-
     void UpdateAnimationSpeed()
     {
-        if (anim == null) return;
-        if (anim.applyRootMotion)
+        if (animHandler == null) return;
+
+        if (animHandler.IsUsingRootMotion)
         {
-            anim.SetFloat("Speed", 0f);
+            animHandler.UpdateLocomotion(0f);
             return;
         }
 
         if (currentTarget == null || currentTargetHealth == null || !currentTargetHealth.isAlive)
         {
-            anim.SetFloat("Speed", 0f);
+            animHandler.UpdateLocomotion(0f);
             return;
         }
 
@@ -569,7 +591,7 @@ public class NPCCombat : MonoBehaviour
             agent.speed = targetAgentSpeed;
 
         float animSpeed = controller.velocity.magnitude / runSpeed;
-        anim.SetFloat("Speed", Mathf.Clamp01(animSpeed));
+        animHandler.UpdateLocomotion(Mathf.Clamp01(animSpeed));
     }
 
     void HandleAttack()
@@ -595,98 +617,13 @@ public class NPCCombat : MonoBehaviour
                 if (angleToTarget <= attackAngle)
                 {
                     int attackIndex = Random.Range(0, 5);
-                    anim.SetInteger("AttackIndex", attackIndex);
-                    anim.SetTrigger("DoAttack");
+                    if (animHandler != null)
+                        animHandler.PlayAttack(attackIndex);
 
                     attackCooldownTimer = attackCooldownDuration;
                 }
             }
         }
-    }
-
-    void OnAnimatorMove()
-    {
-        if (anim == null || !anim.applyRootMotion) return;
-
-        Vector3 delta = anim.deltaPosition;
-        delta.y += verticalVelocity * Time.deltaTime;
-
-        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
-        bool isRolling = state.IsTag("Roll");
-
-        if (isRolling)
-        {
-            int characterLayer = LayerMask.NameToLayer("Character");
-            if (characterLayer != -1)
-            {
-                Collider[] nearby = Physics.OverlapSphere(transform.position, 3f, 1 << characterLayer);
-                foreach (var col in nearby)
-                {
-                    if (col != controller && col.gameObject != gameObject)
-                    {
-                        Physics.IgnoreCollision(controller, col, true);
-                        if (!ignoredColliders.Contains(col))
-                            ignoredColliders.Add(col);
-                    }
-                }
-            }
-
-            controller.Move(delta);
-            wasRollingLastFrame = true;
-        }
-        else
-        {
-            if (wasRollingLastFrame)
-            {
-                foreach (var col in ignoredColliders)
-                {
-                    if (col != null)
-                        Physics.IgnoreCollision(controller, col, false);
-                }
-                ignoredColliders.Clear();
-                wasRollingLastFrame = false;
-            }
-
-            // Separation Force
-            Vector3 separation = Vector3.zero;
-            if (BattlefieldManager.Instance != null)
-            {
-                List<NPCCombat> allies = BattlefieldManager.Instance.GetNPCsInCell(transform.position);
-                if (allies != null)
-                {
-                    int count = 0;
-                    foreach (NPCCombat ally in allies)
-                    {
-                        if (ally != this && ally.myHealth.isAlive && !myHealth.IsEnemy(ally.myHealth.teamCurrent))
-                        {
-                            float dist = Vector3.Distance(transform.position, ally.transform.position);
-                            if (dist < 1.5f && dist > 0.01f)
-                            {
-                                Vector3 dir = (transform.position - ally.transform.position).normalized;
-                                separation += dir * (1.5f - dist);
-                                count++;
-                            }
-                        }
-                    }
-                    if (count > 0)
-                    {
-                        separation /= count;
-                        // chặn đẩy lùi
-                        float dot = Vector3.Dot(separation, transform.forward);
-                        if (dot < 0)
-                        {
-                            separation -= transform.forward * dot;
-                        }
-                        delta += separation * Time.deltaTime * 5f;
-                    }
-                }
-            }
-
-            controller.Move(delta);
-        }
-
-        transform.rotation *= anim.deltaRotation;
-        agent.nextPosition = transform.position;
     }
 
     // test

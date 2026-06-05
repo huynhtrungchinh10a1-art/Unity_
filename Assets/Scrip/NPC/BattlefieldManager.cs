@@ -99,10 +99,10 @@ public class BattlefieldManager : MonoBehaviour
         if (size <= 0.1f) size = 10f; // Tránh chia cho 0
 
         // Giới hạn vẽ (từ -600 đến 600)
-        float minX = -600f;
-        float maxX = 600f;
-        float minZ = -600f;
-        float maxZ = 600f;
+        float minX = 0f;
+        float maxX = 500f;
+        float minZ = 0f;
+        float maxZ = 1000f;
 
         int startX = Mathf.FloorToInt(minX / size);
         int endX = Mathf.CeilToInt(maxX / size);
