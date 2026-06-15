@@ -14,12 +14,12 @@ OcclusionCullingSettings:
 RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
-  m_Fog: 0
+  m_Fog: 1
   m_FogColor: {r: 0.54901963, g: 0.4862745, b: 0.41568628, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.025
-  m_LinearFogStart: 100
-  m_LinearFogEnd: 600
+  m_LinearFogStart: 10
+  m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.34901962, g: 0.30588236, b: 0.26666668, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
@@ -10297,12 +10297,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 1002977672}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &1772989641 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 7db962f2a3faf5b438598d97e01e4da2,
-    type: 3}
-  m_PrefabInstance: {fileID: 1002977672}
-  m_PrefabAsset: {fileID: 0}
 --- !u!143 &1772989643
 CharacterController:
   m_ObjectHideFlags: 0
@@ -10383,7 +10377,6 @@ MonoBehaviour:
   reactiveBase: 0.5
   reactiveDamageScale: 0.3
   furyDuration: 3
-  anim: {fileID: 1772989641}
   walkSpeed: 3.5
   runSpeed: 7
   runDistanceRatio: 1.5
@@ -10391,6 +10384,9 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  kiteRange: 8
+  separationDistance: 2.5
+  separationForce: 5
   ignoreDuration: 3
   rollCooldown: 5
 --- !u!114 &1772989646
@@ -12368,12 +12364,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 74166009}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &2098218698 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 7db962f2a3faf5b438598d97e01e4da2,
-    type: 3}
-  m_PrefabInstance: {fileID: 74166009}
-  m_PrefabAsset: {fileID: 0}
 --- !u!143 &2098218700
 CharacterController:
   m_ObjectHideFlags: 0
@@ -12454,7 +12444,6 @@ MonoBehaviour:
   reactiveBase: 0.5
   reactiveDamageScale: 0.3
   furyDuration: 3
-  anim: {fileID: 2098218698}
   walkSpeed: 3.5
   runSpeed: 7
   runDistanceRatio: 1.5
@@ -12462,6 +12451,9 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  kiteRange: 8
+  separationDistance: 2.5
+  separationForce: 5
   ignoreDuration: 3
   rollCooldown: 5
 --- !u!114 &2098218703

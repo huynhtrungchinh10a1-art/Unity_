@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(HealthAndTeam))]
+
 public class ActiveDefense : MonoBehaviour
 {
     [Header("warning")]

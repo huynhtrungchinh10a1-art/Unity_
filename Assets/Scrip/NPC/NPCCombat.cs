@@ -50,10 +50,10 @@ public class NPCCombat : MonoBehaviour
     public float separationDistance = 2.5f;
     public float separationForce = 5f;
 
-    private CharacterController controller;
-    private float verticalVelocity;
+    protected CharacterController controller;
+    protected float verticalVelocity;
 
-    private NavMeshAgent agent;
+    protected NavMeshAgent agent;
     private HealthAndTeam myHealth;
     private NPCAnimatorHandler animHandler;
 
@@ -96,7 +96,7 @@ public class NPCCombat : MonoBehaviour
     // random
     private float scanOffset;
 
-    void Start()
+    protected virtual void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         controller = GetComponent<CharacterController>();
@@ -121,7 +121,7 @@ public class NPCCombat : MonoBehaviour
         scanOffset = Random.Range(0f, scanInterval);
     }
 
-    void Update()
+    protected virtual void Update()
     {
         HandleFury();
 
@@ -371,7 +371,7 @@ public class NPCCombat : MonoBehaviour
         agent.nextPosition = transform.position;
     }
 
-    void HandleMovement()
+    protected virtual void HandleMovement()
     {
         if (animHandler != null && animHandler.IsUsingRootMotion) return;
 
@@ -394,42 +394,6 @@ public class NPCCombat : MonoBehaviour
         {
             ClearTarget();
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
-            agent.nextPosition = transform.position;
-            return;
-        }
-
-        // Thả diều (Kiting) cho Cung thủ
-        if (animHandler is ArcherAnimatorHandler && dist < kiteRange)
-        {
-            Vector3 fleeDirection = (transform.position - currentTarget.position).normalized;
-            fleeDirection.y = 0;
-            Vector3 fleePosition = transform.position + fleeDirection * 5f;
-
-            NavMeshHit hit;
-            if (NavMesh.SamplePosition(fleePosition, out hit, 5f, NavMesh.AllAreas))
-            {
-                agent.SetDestination(hit.position);
-            }
-            else
-            {
-                agent.SetDestination(fleePosition);
-            }
-
-            agent.speed = runSpeed;
-
-            Vector3 desiredVelocity = agent.desiredVelocity;
-            desiredVelocity.y = verticalVelocity;
-            controller.Move(desiredVelocity * Time.deltaTime);
-
-            Vector3 moveDir = agent.desiredVelocity;
-            moveDir.y = 0;
-            if (moveDir.sqrMagnitude > 0.01f)
-            {
-                Quaternion targetRot = Quaternion.LookRotation(moveDir);
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
-            }
-
             agent.nextPosition = transform.position;
             return;
         }
@@ -594,7 +558,7 @@ public class NPCCombat : MonoBehaviour
         animHandler.UpdateLocomotion(Mathf.Clamp01(animSpeed));
     }
 
-    void HandleAttack()
+    protected virtual void HandleAttack()
     {
         if (attackCooldownTimer > 0)
         {

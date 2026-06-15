@@ -14,6 +14,12 @@ public class AttackStateExit : StateMachineBehaviour
         NPCCombat npcCombat = animator.GetComponentInParent<NPCCombat>();
         if (npcCombat != null)
         {
+            NPCAnimatorHandler animHandler = animator.GetComponentInParent<NPCAnimatorHandler>();
+            if (animHandler != null)
+            {
+                animHandler.ResetAttack();
+            }
+
             animator.SetBool("IsBlocked", false);
         }
     }

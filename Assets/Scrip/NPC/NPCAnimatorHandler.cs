@@ -2,11 +2,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using System.Collections.Generic;
 
-/// <summary>
-/// Base class xử lý toàn bộ Animation cho NPC.
-/// Quản lý Animator, root motion, OnAnimatorMove callback.
-/// Gắn component này (hoặc subclass) cùng GameObject với NPCCombat.
-/// </summary>
 public class NPCAnimatorHandler : MonoBehaviour
 {
     protected Animator anim;
@@ -19,7 +14,7 @@ public class NPCAnimatorHandler : MonoBehaviour
     private List<Collider> ignoredColliders = new List<Collider>();
     private bool wasRollingLastFrame = false;
 
-    // Public state để NPCCombat đọc
+    // để NPCCombat đọc
     public bool IsUsingRootMotion { get; protected set; }
     public bool IsRolling { get; protected set; }
 
