@@ -883,6 +883,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4742264789140545720}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a37011616db511843960ac534cc0a61d,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6253525362301533341}
   m_SourcePrefab: {fileID: 100100000, guid: a37011616db511843960ac534cc0a61d, type: 3}
 --- !u!4 &398193807037032609 stripped
 Transform:
@@ -981,7 +985,6 @@ MonoBehaviour:
   reactiveBase: 0.5
   reactiveDamageScale: 0.3
   furyDuration: 3
-  anim: {fileID: 0}
   walkSpeed: 2.5
   runSpeed: 5
   runDistanceRatio: 1.5
@@ -989,6 +992,9 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  kiteRange: 8
+  separationDistance: 2.5
+  separationForce: 5
   ignoreDuration: 3
   rollCooldown: 5
 --- !u!114 &1884766444672461462
@@ -1047,6 +1053,18 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.88, z: 0}
+--- !u!114 &6253525362301533341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8039068903539534601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9fa18e932658004f90adbbdf4c5a2cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &8855281419396196752 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1852576806548013000, guid: a37011616db511843960ac534cc0a61d,

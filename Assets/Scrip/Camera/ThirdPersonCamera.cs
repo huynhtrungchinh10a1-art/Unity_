@@ -6,21 +6,36 @@ public class ThirdPersonCamera : MonoBehaviour
     public Transform pivot;
     public Transform cam;
     public Animator anim;
+    public Transform firstPersonTarget;
 
     public float mouseSpeed = 3f;
     public float minY = -30f;
     public float maxY = 60f;
-    public float distance = 4f;
+    public float distance = 3f;
+    public float pivotHeight = 1.3f;
 
     float yaw;
     float pitch;
 
     bool isLocked = false;
+    public bool isFirstPerson = false;
     Transform lockTarget;
 
     void LateUpdate()
     {
-        pivot.position = target.position + new Vector3(0, 1.6f, 0);
+        if (isFirstPerson && firstPersonTarget != null)
+        {
+            pivot.position = firstPersonTarget.position;
+            
+            // Xoay nhân vật theo hướng yaw của camera ở góc nhìn thứ nhất
+            Vector3 targetEuler = target.eulerAngles;
+            targetEuler.y = yaw;
+            target.rotation = Quaternion.Euler(0, yaw, 0);
+        }
+        else
+        {
+            pivot.position = target.position + new Vector3(0, pivotHeight, 0);
+        }
 
         HandleLockToggle();
 
@@ -33,22 +48,16 @@ public class ThirdPersonCamera : MonoBehaviour
             FreeLookCamera();
         }
 
-        anim.SetBool("IsLocked", isLocked);
+        anim.SetBool("IsLocked", isLocked || isFirstPerson);
     }
 
     void HandleLockToggle()
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
-            if (!isLocked)
-            {
-                FindTarget();
-            }
-            else
-            {
-                isLocked = false;
-                lockTarget = null;
-            }
+            isFirstPerson = !isFirstPerson;
+            isLocked = false;
+            lockTarget = null;
         }
     }
 
@@ -63,7 +72,15 @@ public class ThirdPersonCamera : MonoBehaviour
         pitch = Mathf.Clamp(pitch, minY, maxY);
 
         pivot.rotation = Quaternion.Euler(pitch, yaw, 0);
-        cam.localPosition = new Vector3(0, 0, -distance);
+        
+        if (isFirstPerson && firstPersonTarget != null)
+        {
+            cam.localPosition = Vector3.zero;
+        }
+        else
+        {
+            cam.localPosition = new Vector3(0, 0, -distance);
+        }
     }
 
     void LockOnCamera()
@@ -108,7 +125,7 @@ public class ThirdPersonCamera : MonoBehaviour
     // nhanh hơn animator.get
     public bool IsLocked()
     {
-        return isLocked;
+        return isLocked || isFirstPerson;
     }
 
     public Transform GetLockTarget()
