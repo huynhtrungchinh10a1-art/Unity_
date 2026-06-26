@@ -129,7 +129,33 @@ public class ArcherCombat : NPCCombat
         if (dist < kiteRange)
         {
             Vector3 fleeDirection = -dirToTarget.normalized;
-            Vector3 fleePos = transform.position + fleeDirection * 5f;
+            float fleeDistance = 5f;
+
+            Vector3 rayOrigin = transform.position + Vector3.up;
+            if (Physics.Raycast(rayOrigin, fleeDirection, fleeDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            {
+                Vector3 rightFleeDir = Vector3.Cross(Vector3.up, fleeDirection).normalized;
+                Vector3 leftFleeDir = -rightFleeDir;
+
+                bool rightClear = !Physics.Raycast(rayOrigin, rightFleeDir, fleeDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+                bool leftClear = !Physics.Raycast(rayOrigin, leftFleeDir, fleeDistance, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+
+                if (rightClear && !leftClear)
+                {
+                    fleeDirection = rightFleeDir;
+                }
+                else if (leftClear && !rightClear)
+                {
+                    fleeDirection = leftFleeDir;
+                }
+                else
+                {
+                    // bi qua thi random
+                    fleeDirection = Random.value > 0.5f ? rightFleeDir : leftFleeDir;
+                }
+            }
+
+            Vector3 fleePos = transform.position + fleeDirection * fleeDistance;
 
             NavMeshHit hit;
             if (NavMesh.SamplePosition(fleePos, out hit, 5f, NavMesh.AllAreas))
@@ -188,6 +214,7 @@ public class ArcherCombat : NPCCombat
     {
         if (archerAnim == null) return;
 
+        // phien dich
         Vector3 localVelocity = transform.InverseTransformDirection(controller.velocity);
 
         float speedNormalizedX = localVelocity.x / runSpeed;
