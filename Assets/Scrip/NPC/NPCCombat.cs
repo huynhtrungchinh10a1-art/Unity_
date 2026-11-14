@@ -19,7 +19,10 @@ public class NPCCombat : MonoBehaviour
     public float switchTargetCooldown = 2f;
     public float outnumberedCooldownMultiplier = 0.5f;
     public float commitLockTime = 1.2f;
-    public int maxAttackersPerTarget = 3;
+
+    [Header("Targeting Limits")]
+    public int maxAttackersPerTarget = 3;      // Toi da so luong can chien bu vao 1 muc tieu
+    public int maxTotalAttackersPerTarget = 5; // Toi da tong so nguoi tan cong (can chien + cung) vao 1 muc tieu
 
     [Header("Scoring (Global)")]
     public float weightAttackerCount = 0.75f;
@@ -34,7 +37,7 @@ public class NPCCombat : MonoBehaviour
     public float reactiveDamageScale = 0.3f;
 
     [Header("Fury")]
-    public float furyDuration = 3f;
+    public float furyDuration = 8f;
 
     [Header("Movement & Attack")]
     public float walkSpeed = 2.5f;
@@ -44,7 +47,6 @@ public class NPCCombat : MonoBehaviour
     public float rotationSpeed = 5f;
     public float attackAngle = 30f;
     public float attackCooldownTimer = 0f;
-    public float kiteRange = 8f;
 
     [Header("Separation")]
     public float separationDistance = 2.5f;
@@ -54,8 +56,8 @@ public class NPCCombat : MonoBehaviour
     protected float verticalVelocity;
 
     protected NavMeshAgent agent;
-    private HealthAndTeam myHealth;
-    private NPCAnimatorHandler animHandler;
+    protected HealthAndTeam myHealth;
+    protected NPCAnimatorHandler animHandler;
 
     // Public properties cho NPCAnimatorHandler đọc
     public HealthAndTeam MyHealth { get { return myHealth; } }
@@ -63,31 +65,31 @@ public class NPCCombat : MonoBehaviour
     public Transform CurrentTarget { get { return currentTarget; } }
 
     // target
-    private Transform currentTarget;
-    private HealthAndTeam currentTargetHealth;
-    private bool ignorePlayerPriority;
+    protected Transform currentTarget;
+    protected HealthAndTeam currentTargetHealth;
+    protected bool ignorePlayerPriority;
 
     // timer & range
-    private float lastSwitchTime;
-    private float commitTimer;
-    private float noTargetTimer;
-    private float currentDetectionRange;
-    private float currentChaseRange;
-    private float ignorePlayerPriorityTimer;
+    protected float lastSwitchTime;
+    protected float commitTimer;
+    protected float noTargetTimer;
+    protected float currentDetectionRange;
+    protected float currentChaseRange;
+    protected float ignorePlayerPriorityTimer;
     public float ignoreDuration = 3f;
     public float rollCooldown = 5f;
-    private float rollTimer = 0f;
+    protected float rollTimer = 0f;
 
     // fury
-    private bool isFuryMode;
-    private float furyTimer;
+    protected bool isFuryMode;
+    protected float furyTimer;
 
     // player
-    private GameObject playerObject;
-    private HealthAndTeam playerHealth;
-    private LayerMask characterLayerMask;
+    protected GameObject playerObject;
+    protected HealthAndTeam playerHealth;
+    protected LayerMask characterLayerMask;
 
-    private List<HealthAndTeam> visibleEnemies = new List<HealthAndTeam>();
+    protected List<HealthAndTeam> visibleEnemies = new List<HealthAndTeam>();
 
     // Grid
     private Vector2Int currentGridCell;
@@ -117,6 +119,15 @@ public class NPCCombat : MonoBehaviour
         agent.speed = walkSpeed;
         agent.updateRotation = false;
         agent.updatePosition = false;
+
+        // Tự động Warp về vị trí NavMesh gần nhất nếu NPC spawn bị lệch khỏi sàn (trên không, dốc)
+        if (agent != null && agent.isActiveAndEnabled && !agent.isOnNavMesh)
+        {
+            if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 15.0f, NavMesh.AllAreas))
+            {
+                agent.Warp(hit.position);
+            }
+        }
 
         scanOffset = Random.Range(0f, scanInterval);
     }
@@ -252,7 +263,7 @@ public class NPCCombat : MonoBehaviour
         }
     }
 
-    HealthAndTeam DecideTarget()
+    protected virtual HealthAndTeam DecideTarget()
     {
         float bestScore = float.MaxValue;
         HealthAndTeam best = null;
@@ -281,7 +292,7 @@ public class NPCCombat : MonoBehaviour
 
             // skip target da day nguoi
             bool isMyCurrentTarget = (enemy == currentTargetHealth);
-            bool isFull = enemy.attackerCount >= maxAttackersPerTarget;
+            bool isFull = IsTargetFull(enemy);
 
             if (isFull && !isMyCurrentTarget)
                 continue;
@@ -317,10 +328,18 @@ public class NPCCombat : MonoBehaviour
         return best;
     }
 
-    // tinh score (so attacker - khoang cach)
-    float ComputeGlobalScore(HealthAndTeam enemy)
+    // Kiem tra muc tieu da day cho chua (can chien: toi da 3 can chien VA tong khong qua 5)
+    protected virtual bool IsTargetFull(HealthAndTeam enemy)
     {
-        float normAtt = Mathf.Clamp01(enemy.attackerCount / maxExpectedAttackers);
+        if (enemy == null) return false;
+        return enemy.GetMeleeAttackerCount() >= maxAttackersPerTarget 
+            || enemy.GetTotalAttackerCount() >= maxTotalAttackersPerTarget;
+    }
+
+    // tinh score (so attacker - khoang cach)
+    protected virtual float ComputeGlobalScore(HealthAndTeam enemy)
+    {
+        float normAtt = Mathf.Clamp01((float)enemy.GetMeleeAttackerCount() / maxExpectedAttackers);
         float dist = Vector3.Distance(transform.position, enemy.transform.position);
         float normDist = Mathf.Clamp01(dist / currentDetectionRange);
 
@@ -342,7 +361,7 @@ public class NPCCombat : MonoBehaviour
     }
 
     // tinh do yeu duoi
-    float ComputeReactiveScore(HealthAndTeam attacker)
+    protected virtual float ComputeReactiveScore(HealthAndTeam attacker)
     {
         float healthPercent = attacker.currentHealth / attacker.maxHealth;
         float pressure = 1f - healthPercent;
@@ -350,7 +369,7 @@ public class NPCCombat : MonoBehaviour
         return 1f - reactivePriority;
     }
 
-    void SwitchToTarget(HealthAndTeam newTarget)
+    protected void SwitchToTarget(HealthAndTeam newTarget)
     {
         if (currentTargetHealth != null)
             currentTargetHealth.RemoveAttacker(gameObject);
@@ -360,14 +379,41 @@ public class NPCCombat : MonoBehaviour
         newTarget.AddAttacker(gameObject);
     }
 
-    void ClearTarget()
+    protected void SafeResetPath()
+    {
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+        {
+            agent.ResetPath();
+        }
+    }
+
+    protected void SafeSetDestination(Vector3 dest)
+    {
+        if (agent != null && agent.isActiveAndEnabled)
+        {
+            if (!agent.isOnNavMesh)
+            {
+                if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 15.0f, NavMesh.AllAreas))
+                {
+                    agent.Warp(hit.position);
+                }
+            }
+
+            if (agent.isOnNavMesh)
+            {
+                agent.SetDestination(dest);
+            }
+        }
+    }
+
+    protected void ClearTarget()
     {
         if (currentTargetHealth != null)
             currentTargetHealth.RemoveAttacker(gameObject);
 
         currentTarget = null;
         currentTargetHealth = null;
-        agent.ResetPath();
+        SafeResetPath();
         agent.nextPosition = transform.position;
     }
 
@@ -382,7 +428,7 @@ public class NPCCombat : MonoBehaviour
 
         if (currentTarget == null || currentTargetHealth == null || !currentTargetHealth.isAlive)
         {
-            agent.ResetPath();
+            SafeResetPath();
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
             agent.nextPosition = transform.position;
             return;
@@ -401,7 +447,7 @@ public class NPCCombat : MonoBehaviour
         if (dist > attackRange)
         {
             Vector3 dest = currentTarget.position;
-            agent.SetDestination(dest);
+            SafeSetDestination(dest);
 
             Vector3 desiredVelocity = agent.desiredVelocity;
             desiredVelocity.y = verticalVelocity;
@@ -420,7 +466,7 @@ public class NPCCombat : MonoBehaviour
         else
         {
             // dung yen quay mat
-            agent.ResetPath();
+            SafeResetPath();
 
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
 
@@ -458,36 +504,84 @@ public class NPCCombat : MonoBehaviour
     // tim th yeu nhat
     Transform GetLowestHealthAttacker()
     {
-        if (myHealth.currentAttackers.Count == 0) return null;
+        if (myHealth.currentAttackers.Count == 0 && myHealth.threatMap.Count == 0) return null;
 
         float minHealth = float.MaxValue;
         Transform lowest = null;
-        foreach (GameObject obj in myHealth.currentAttackers)
+
+        // Tập hợp tất cả các kẻ thù đang nhắm vào mình hoặc đã gây sát thương lên mình
+        HashSet<GameObject> candidateAttackers = new HashSet<GameObject>(myHealth.currentAttackers);
+        foreach (var kvp in myHealth.threatMap)
+        {
+            if (kvp.Key != null && kvp.Value > 0f)
+                candidateAttackers.Add(kvp.Key);
+        }
+
+        foreach (GameObject obj in candidateAttackers)
         {
             if (obj == null) continue;
             HealthAndTeam h = obj.GetComponent<HealthAndTeam>();
-            if (h != null && h.isAlive && h.currentHealth < minHealth)
+            if (h != null && h.isAlive && myHealth.IsEnemy(h.teamCurrent) && h.currentHealth < minHealth)
             {
-                minHealth = h.currentHealth;
-                lowest = obj.transform;
+                // Chỉ phản ứng trong reactive layer nếu kẻ địch nằm trong tầm phát hiện HOẶC đã từng gây sát thương lên mình
+                float dist = Vector3.Distance(transform.position, obj.transform.position);
+                bool hasDealtDamage = myHealth.GetThreat(obj) > 0f;
+                if (dist <= currentDetectionRange || hasDealtDamage)
+                {
+                    minHealth = h.currentHealth;
+                    lowest = obj.transform;
+                }
             }
         }
         return lowest;
     }
 
     // event
-    void OnDamaged(GameObject attacker, float damage)
+    protected virtual void OnDamaged(GameObject attacker, float damage)
     {
-        if (attacker.CompareTag("Player"))
+        if (attacker != null)
         {
-            isFuryMode = true;
-            furyTimer = furyDuration;
+            HealthAndTeam attackerHealth = attacker.GetComponent<HealthAndTeam>();
+            if (attackerHealth != null && attackerHealth.isAlive && myHealth.IsEnemy(attackerHealth.teamCurrent))
+            {
+                myHealth.AddAttacker(attacker);
+
+                // Nếu đang rảnh rỗi chưa có target (hoặc target cũ đã chết): Phản xạ lập tức quay lại target kẻ đã đánh mình!
+                if (currentTarget == null || currentTargetHealth == null || !currentTargetHealth.isAlive)
+                {
+                    float dist = Vector3.Distance(transform.position, attacker.transform.position);
+                    // Nới rộng tầm rượt đuổi nếu bị bắn tỉa từ ngoài tầm chase cơ bản
+                    if (dist > currentChaseRange)
+                    {
+                        currentChaseRange = Mathf.Min(dist + 5f, maxDetectionRange);
+                        currentDetectionRange = Mathf.Min(dist + 5f, maxDetectionRange);
+                    }
+
+                    SwitchToTarget(attackerHealth);
+                    commitTimer = Time.time + commitLockTime;
+                    lastSwitchTime = Time.time;
+                }
+            }
+
+            if (attacker.CompareTag("Player"))
+            {
+                isFuryMode = true;
+                furyTimer = furyDuration;
+            }
+            else
+            {
+                ignorePlayerPriority = true;
+                ignorePlayerPriorityTimer = ignoreDuration;
+            }
         }
-        else
-        {
-            ignorePlayerPriority = true;
-            ignorePlayerPriorityTimer = ignoreDuration;
-        }
+
+        CheckRollOnDamaged(attacker, damage);
+    }
+
+    protected virtual void CheckRollOnDamaged(GameObject attacker, float damage)
+    {
+        // Nếu đã Block thành công (damage == 0): Không Roll
+        if (damage <= 0f) return;
 
         // roll
         if (myHealth.currentAttackers.Count >= 2 && Time.time >= rollTimer)
@@ -498,11 +592,119 @@ public class NPCCombat : MonoBehaviour
             // float rollChance = 1.2f;
             if (Random.value < rollChance)
             {
+                Vector3 escapeDir = FindBestRollDirection(attacker);
+                if (escapeDir.sqrMagnitude > 0.01f)
+                {
+                    transform.rotation = Quaternion.LookRotation(escapeDir);
+                }
+
+                SafeResetPath();
+                if (agent != null)
+                {
+                    agent.velocity = Vector3.zero;
+                    agent.nextPosition = transform.position;
+                }
+
                 if (animHandler != null)
                     animHandler.PlayRoll();
                 rollTimer = Time.time + rollCooldown;
             }
         }
+    }
+
+    protected virtual Vector3 FindBestRollDirection(GameObject attacker)
+    {
+        Vector3 baseAwayDir;
+        if (attacker != null)
+        {
+            baseAwayDir = transform.position - attacker.transform.position;
+            baseAwayDir.y = 0;
+            if (baseAwayDir.sqrMagnitude < 0.001f)
+            {
+                baseAwayDir = -transform.forward;
+            }
+            else
+            {
+                baseAwayDir.Normalize();
+            }
+        }
+        else if (currentTarget != null)
+        {
+            baseAwayDir = transform.position - currentTarget.position;
+            baseAwayDir.y = 0;
+            baseAwayDir = baseAwayDir.sqrMagnitude < 0.001f ? -transform.forward : baseAwayDir.normalized;
+        }
+        else
+        {
+            baseAwayDir = -transform.forward;
+        }
+
+        // Danh sách các góc thử nghiệm: 
+        // 0 (lùi thẳng), +45 (lùi chếch phải), -45 (lùi chếch trái), 
+        // +90 (né ngang phải), -90 (né ngang trái), +135 (vòng phải), -135 (vòng trái)
+        float[] candidateAngles = new float[] { 0f, 45f, -45f, 90f, -90f, 135f, -135f };
+
+        Vector3 bestDir = baseAwayDir;
+        float bestScore = -9999f;
+
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.5f;
+        float checkDistance = 4.0f;
+
+        int characterLayer = LayerMask.NameToLayer("Character");
+        int mask = Physics.DefaultRaycastLayers;
+        if (characterLayer != -1)
+        {
+            mask |= (1 << characterLayer);
+        }
+
+        foreach (float angle in candidateAngles)
+        {
+            Vector3 testDir = Quaternion.Euler(0, angle, 0) * baseAwayDir;
+            testDir.y = 0;
+            testDir.Normalize();
+
+            // Điểm góc: Ưu tiên thoát xa kẻ tấn công (lùi thẳng xa nhất)
+            float angleScore = Mathf.Cos(angle * Mathf.Deg2Rad) * 40f + 10f;
+
+            float clearDist = checkDistance;
+
+            // Kiểm tra vật cản (tường, môi trường, hoặc Character khác)
+            RaycastHit[] hits = Physics.SphereCastAll(rayOrigin, 0.35f, testDir, checkDistance, mask, QueryTriggerInteraction.Ignore);
+            foreach (var hit in hits)
+            {
+                if (hit.collider != null && hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform))
+                {
+                    if (hit.distance < clearDist)
+                    {
+                        clearDist = hit.distance;
+                    }
+                }
+            }
+
+            // Điểm không gian: Càng xa vật cản càng tốt
+            float spaceScore = (clearDist / checkDistance) * 40f;
+
+            // Phạt nặng nếu bị kẹt sát vật cản (< 1.8m)
+            if (clearDist < 1.8f)
+            {
+                spaceScore -= 60f;
+            }
+
+            // Kiểm tra điểm đến có NavMesh hợp lệ không
+            Vector3 targetPos = transform.position + testDir * Mathf.Min(clearDist, 3.5f);
+            bool hasNavMesh = NavMesh.SamplePosition(targetPos, out NavMeshHit navHit, 1.2f, NavMesh.AllAreas);
+            float navScore = hasNavMesh ? 20f : -50f;
+
+            float totalScore = angleScore + spaceScore + navScore;
+
+            if (totalScore > bestScore)
+            {
+                bestScore = totalScore;
+                bestDir = testDir;
+            }
+        }
+
+        return bestDir;
     }
 
     public void OnTargetDied(GameObject deadTarget)
@@ -531,7 +733,7 @@ public class NPCCombat : MonoBehaviour
         enabled = false;
     }
 
-    void UpdateAnimationSpeed()
+    protected virtual void UpdateAnimationSpeed()
     {
         if (animHandler == null) return;
 
@@ -554,7 +756,10 @@ public class NPCCombat : MonoBehaviour
         if (Mathf.Abs(agent.speed - targetAgentSpeed) > 0.01f)
             agent.speed = targetAgentSpeed;
 
-        float animSpeed = controller.velocity.magnitude / runSpeed;
+        Vector3 horizontalVel = controller.velocity;
+        horizontalVel.y = 0;
+        float animSpeed = horizontalVel.magnitude / runSpeed;
+        if (horizontalVel.magnitude < 0.1f) animSpeed = 0f;
         animHandler.UpdateLocomotion(Mathf.Clamp01(animSpeed));
     }
 

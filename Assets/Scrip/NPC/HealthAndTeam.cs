@@ -56,6 +56,16 @@ public class HealthAndTeam : MonoBehaviour
             return false;
         }
 
+        // Bỏ qua sát thương từ đồng đội (chống Friendly Fire)
+        if (attacker != null && attacker != gameObject)
+        {
+            HealthAndTeam attackerHealth = attacker.GetComponentInParent<HealthAndTeam>();
+            if (attackerHealth != null && !IsEnemy(attackerHealth.teamCurrent))
+            {
+                return false;
+            }
+        }
+
         float finalDamage = damage;
         bool isBlocked = false;
 
@@ -65,8 +75,15 @@ public class HealthAndTeam : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
-        AddThreat(attacker, damage);
-        onDamaged?.Invoke(attacker, damage);
+        if (finalDamage > 0)
+        {
+            AddThreat(attacker, finalDamage);
+            if (attacker != null)
+            {
+                AddAttacker(attacker);
+            }
+        }
+        onDamaged?.Invoke(attacker, finalDamage);
 
         if (currentHealth <= 0)
         {
@@ -137,9 +154,53 @@ public class HealthAndTeam : MonoBehaviour
         }
     }
 
+    public void CleanDeadAttackers()
+    {
+        for (int i = currentAttackers.Count - 1; i >= 0; i--)
+        {
+            if (currentAttackers[i] == null)
+            {
+                currentAttackers.RemoveAt(i);
+                continue;
+            }
+            HealthAndTeam h = currentAttackers[i].GetComponentInParent<HealthAndTeam>();
+            if (h != null && !h.isAlive)
+            {
+                currentAttackers.RemoveAt(i);
+            }
+        }
+        attackerCount = currentAttackers.Count;
+    }
+
+    public int GetMeleeAttackerCount()
+    {
+        CleanDeadAttackers();
+        int count = 0;
+        for (int i = 0; i < currentAttackers.Count; i++)
+        {
+            if (currentAttackers[i] == null) continue;
+            if (currentAttackers[i].GetComponentInParent<ArcherCombat>() == null)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public int GetTotalAttackerCount()
+    {
+        CleanDeadAttackers();
+        return currentAttackers.Count;
+    }
+
     public void AddAttacker(GameObject attacker)
     {
-        if (!isAlive) return;
+        if (!isAlive || attacker == null || attacker == gameObject) return;
+
+        HealthAndTeam attackerHealth = attacker.GetComponentInParent<HealthAndTeam>();
+        if (attackerHealth != null && !IsEnemy(attackerHealth.teamCurrent)) return;
+
+        CleanDeadAttackers();
 
         if (!currentAttackers.Contains(attacker))
         {

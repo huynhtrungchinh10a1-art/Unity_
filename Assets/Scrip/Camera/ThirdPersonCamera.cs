@@ -13,6 +13,7 @@ public class ThirdPersonCamera : MonoBehaviour
     public float maxY = 60f;
     public float distance = 3f;
     public float pivotHeight = 1.3f;
+    public float lockDistance = 25f;
 
     float yaw;
     float pitch;
@@ -39,6 +40,24 @@ public class ThirdPersonCamera : MonoBehaviour
 
         HandleLockToggle();
 
+        // Tu dong mo khoa neu muc tieu bi tieu diet hoac null
+        if (isLocked)
+        {
+            if (lockTarget == null)
+            {
+                isLocked = false;
+            }
+            else
+            {
+                HealthAndTeam targetH = lockTarget.GetComponent<HealthAndTeam>();
+                if (targetH != null && !targetH.isAlive)
+                {
+                    isLocked = false;
+                    lockTarget = null;
+                }
+            }
+        }
+
         if (isLocked && lockTarget != null)
         {
             LockOnCamera();
@@ -53,11 +72,26 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void HandleLockToggle()
     {
+        // Phim P: Bat/Tat goc nhin thu nhat
         if (Input.GetKeyDown(KeyCode.P))
         {
             isFirstPerson = !isFirstPerson;
             isLocked = false;
             lockTarget = null;
+        }
+
+        // Phim Tab: Bat/Tat Lock-on khoa muc tieu ke dich
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (!isLocked)
+            {
+                FindTarget();
+            }
+            else
+            {
+                isLocked = false;
+                lockTarget = null;
+            }
         }
     }
 
@@ -100,24 +134,45 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void FindTarget()
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        HealthAndTeam playerHealth = target != null ? target.GetComponent<HealthAndTeam>() : null;
+        HealthAndTeam[] allHealths = FindObjectsOfType<HealthAndTeam>();
 
-        float closest = Mathf.Infinity;
-        Transform nearest = null;
+        float bestScore = Mathf.Infinity;
+        Transform bestTarget = null;
+        Vector3 camForward = cam != null ? cam.forward : (pivot != null ? pivot.forward : transform.forward);
+        camForward.y = 0;
+        camForward.Normalize();
 
-        foreach (var e in enemies)
+        foreach (var h in allHealths)
         {
-            float dist = Vector3.Distance(target.position, e.transform.position);
-            if (dist < closest)
+            if (h == null || !h.isAlive || (target != null && h.transform == target)) continue;
+
+            // Neu nguoi choi co team, chi khoa vao ke thù
+            if (playerHealth != null && !playerHealth.IsEnemy(h.teamCurrent)) continue;
+
+            float dist = Vector3.Distance(target.position, h.transform.position);
+            if (dist > lockDistance) continue;
+
+            // Tinh goc so voi huong nhin cua Camera de uu tien muc tieu truoc mat
+            Vector3 dirToTarget = (h.transform.position - target.position);
+            dirToTarget.y = 0;
+            if (dirToTarget.sqrMagnitude < 0.01f) continue;
+
+            float angle = Vector3.Angle(camForward, dirToTarget.normalized);
+            // Chi khoa muc tieu trong tam mat (angle < 75 do), tru khi ke dich rat gan (< 8m)
+            if (angle > 75f && dist > 8f) continue;
+
+            float score = dist + angle * 0.15f;
+            if (score < bestScore)
             {
-                closest = dist;
-                nearest = e.transform;
+                bestScore = score;
+                bestTarget = h.transform;
             }
         }
 
-        if (nearest != null)
+        if (bestTarget != null)
         {
-            lockTarget = nearest;
+            lockTarget = bestTarget;
             isLocked = true;
         }
     }

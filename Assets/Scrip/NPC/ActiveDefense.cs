@@ -15,6 +15,7 @@ public class ActiveDefense : MonoBehaviour
     private NPCAnimatorHandler animHandler;
     private HealthAndTeam myHealth;
     private NPCCombat myCombat;
+    private Animator anim;
 
     void Awake()
     {
@@ -22,6 +23,8 @@ public class ActiveDefense : MonoBehaviour
         myHealth = GetComponent<HealthAndTeam>();
         myCombat = GetComponent<NPCCombat>();
         characterLayerMask = LayerMask.GetMask("Character");
+        anim = GetComponent<Animator>();
+        if (anim == null) anim = GetComponentInChildren<Animator>();
     }
 
     // chay khi attack
@@ -49,9 +52,25 @@ public class ActiveDefense : MonoBehaviour
     // chay khi phong thu
     public void ReactToWarning(GameObject attacker = null)
     {
+        if (myHealth != null && !myHealth.isAlive)
+        {
+            return;
+        }
+
         if (animHandler != null && animHandler.IsRolling)
         {
             return;
+        }
+
+        // Đang tung đòn đánh (Tag: Combo) thì không bị ngắt ngang để chuyển sang thủ
+        if (anim != null)
+        {
+            AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+            AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
+            if (state.IsTag("Combo") || (anim.IsInTransition(0) && next.IsTag("Combo")))
+            {
+                return;
+            }
         }
 
         bool isBlocking = Random.value < blockChance;

@@ -42,15 +42,18 @@ public class NPCAnimatorHandler : MonoBehaviour
             state.IsTag("Impact") ||
             state.IsTag("Roll") ||
             (anim.IsInTransition(0) &&
-                (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact")));
+                (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact") || next.IsTag("Roll")));
 
-        IsRolling = state.IsTag("Roll");
+        IsRolling = state.IsTag("Roll") || (anim.IsInTransition(0) && next.IsTag("Roll"));
 
         anim.applyRootMotion = IsUsingRootMotion;
 
         if (IsUsingRootMotion)
         {
-            agent.ResetPath();
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.ResetPath();
+            }
         }
 
         agent.nextPosition = transform.position;
@@ -66,6 +69,7 @@ public class NPCAnimatorHandler : MonoBehaviour
     public virtual void PlayRoll()
     {
         if (anim == null) return;
+        IsRolling = true;
         anim.SetTrigger("DoRoll");
     }
 

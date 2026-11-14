@@ -144,7 +144,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -369,37 +369,37 @@ PrefabInstance:
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.296
+      value: -0.29599673
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.333
+      value: -0.3778245
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.354
+      value: -0.31013018
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.6983826
+      value: 0.69838464
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.30387825
+      value: 0.3038794
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.623872
+      value: 0.6238685
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.17522433
+      value: 0.17522666
       objectReference: {fileID: 0}
     - target: {fileID: 3023699479536983291, guid: c0c696523e517d84f94c30b02074861e,
         type: 3}
@@ -443,17 +443,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 247.6
+      value: -11
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 15.07
+      value: 26.712
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 127.08
+      value: 67.211075
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
@@ -463,17 +463,17 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
@@ -925,7 +925,7 @@ NavMeshAgent:
   m_Speed: 0
   m_Acceleration: 12
   avoidancePriority: 50
-  m_AngularSpeed: 0
+  m_AngularSpeed: 240
   m_StoppingDistance: 1.4
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 0
@@ -946,7 +946,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b6ab91cbf65a1d44889df00792761dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamCurrent: 2
+  teamCurrent: 1
   maxHealth: 100
   currentHealth: 0
   isAlive: 1
@@ -984,7 +984,7 @@ MonoBehaviour:
   maxThreatForNorm: 50
   reactiveBase: 0.5
   reactiveDamageScale: 0.3
-  furyDuration: 3
+  furyDuration: 8
   walkSpeed: 2.5
   runSpeed: 5
   runDistanceRatio: 1.5
@@ -992,7 +992,6 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
-  kiteRange: 8
   separationDistance: 2.5
   separationForce: 5
   ignoreDuration: 3
