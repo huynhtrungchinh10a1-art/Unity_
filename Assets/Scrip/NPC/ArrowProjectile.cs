@@ -298,6 +298,22 @@ public class ArrowProjectile : MonoBehaviour
         }
 
         transform.localRotation = initialRot;
+
+        // Nếu cắm trên mặt đất (không gắn vào xương nhân vật):
+        // Chuyển giao ma trận cho GroundArrowManager (Total War GPU Instancing) và hủy GameObject
+        if (transform.parent == null)
+        {
+            MeshFilter mf = GetComponentInChildren<MeshFilter>();
+            MeshRenderer mr = GetComponentInChildren<MeshRenderer>();
+            if (mf != null && mr != null && mf.sharedMesh != null && mr.sharedMaterial != null)
+            {
+                Transform visualT = mf.transform;
+                GroundArrowManager.Instance.RegisterArrow(mf.sharedMesh, mr.sharedMaterial, visualT.localToWorldMatrix);
+                Destroy(gameObject);
+                yield break;
+            }
+        }
+
         Destroy(this);
     }
 }

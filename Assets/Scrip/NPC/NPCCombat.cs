@@ -24,6 +24,12 @@ public class NPCCombat : MonoBehaviour
     public int maxAttackersPerTarget = 3;      // Toi da so luong can chien bu vao 1 muc tieu
     public int maxTotalAttackersPerTarget = 5; // Toi da tong so nguoi tan cong (can chien + cung) vao 1 muc tieu
 
+    [Header("Distance Animation Culling (Fog)")]
+    public bool enableDistanceAnimCulling = true;
+    public float animCullDistance = 45f; // Qua 45m (trong suong mu) thi tam dung Animator
+    private float distanceCullTimer = 0f;
+    private bool isAnimCulled = false;
+
     [Header("Scoring (Global)")]
     public float weightAttackerCount = 0.75f;
     public float weightDistance = 0.25f;
@@ -58,6 +64,7 @@ public class NPCCombat : MonoBehaviour
     protected NavMeshAgent agent;
     protected HealthAndTeam myHealth;
     protected NPCAnimatorHandler animHandler;
+    protected Animator anim;
 
     // Public properties cho NPCAnimatorHandler đọc
     public HealthAndTeam MyHealth { get { return myHealth; } }
@@ -104,6 +111,7 @@ public class NPCCombat : MonoBehaviour
         controller = GetComponent<CharacterController>();
         myHealth = GetComponent<HealthAndTeam>();
         animHandler = GetComponent<NPCAnimatorHandler>();
+        anim = GetComponentInChildren<Animator>();
 
         characterLayerMask = LayerMask.GetMask("Character");
 
@@ -150,6 +158,13 @@ public class NPCCombat : MonoBehaviour
         }
 
         HandleMovement();
+
+        distanceCullTimer += Time.deltaTime;
+        if (distanceCullTimer >= 0.35f)
+        {
+            distanceCullTimer = 0f;
+            UpdateDistanceAnimationCulling();
+        }
 
         if (ignorePlayerPriority)
         {
@@ -539,6 +554,12 @@ public class NPCCombat : MonoBehaviour
     // event
     protected virtual void OnDamaged(GameObject attacker, float damage)
     {
+        if (isAnimCulled && anim != null)
+        {
+            isAnimCulled = false;
+            anim.enabled = true;
+        }
+
         if (attacker != null)
         {
             HealthAndTeam attackerHealth = attacker.GetComponent<HealthAndTeam>();
@@ -718,6 +739,12 @@ public class NPCCombat : MonoBehaviour
         ClearTarget();
         myHealth.threatMap.Clear();
 
+        if (isAnimCulled && anim != null)
+        {
+            isAnimCulled = false;
+            anim.enabled = true;
+        }
+
         if (isRegisteredInGrid && BattlefieldManager.Instance != null)
         {
             BattlefieldManager.Instance.UnregisterNPC(this, currentGridCell);
@@ -731,6 +758,26 @@ public class NPCCombat : MonoBehaviour
         }
         agent.isStopped = true;
         enabled = false;
+    }
+
+    protected virtual void UpdateDistanceAnimationCulling()
+    {
+        if (!enableDistanceAnimCulling || anim == null) return;
+
+        if (playerObject == null)
+        {
+            playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject == null) return;
+        }
+
+        float dist = Vector3.Distance(transform.position, playerObject.transform.position);
+        bool shouldCull = dist > animCullDistance;
+
+        if (shouldCull != isAnimCulled)
+        {
+            isAnimCulled = shouldCull;
+            anim.enabled = !shouldCull;
+        }
     }
 
     protected virtual void UpdateAnimationSpeed()

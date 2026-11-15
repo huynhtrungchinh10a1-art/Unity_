@@ -751,6 +751,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -1735,6 +1738,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -5985,6 +5991,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -11075,6 +11084,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -12368,6 +12380,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -13825,6 +13840,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -14292,7 +14310,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1019213748
 Transform:
   m_ObjectHideFlags: 0
@@ -20886,7 +20904,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1210744754
 Transform:
   m_ObjectHideFlags: 0
@@ -27170,6 +27188,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -28396,6 +28417,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -30184,6 +30208,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -31467,6 +31494,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -34807,6 +34837,9 @@ MonoBehaviour:
   commitLockTime: 1.2
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
+  enableDistanceAnimCulling: 1
+  animCullDistance: 45
+  enableCullingDebug: 1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
