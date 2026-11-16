@@ -147,9 +147,11 @@ public class ArcherAnimatorHandler : NPCAnimatorHandler
         if (visualArrow != null)
             visualArrow.SetActive(false);
 
+        int firedCount = 1;
         if (wasHighSkill)
         {
             SpawnHighVolleyArrows();
+            firedCount = volleyArrowCount;
         }
         else
         {
@@ -157,35 +159,37 @@ public class ArcherAnimatorHandler : NPCAnimatorHandler
         }
 
         isAimingHighSkill = false;
-        ConsumeQuiverArrow();
+        ConsumeQuiverArrow(firedCount);
     }
 
-    private void ConsumeQuiverArrow()
+    private void ConsumeQuiverArrow(int amount = 1)
     {
         if (quiverArrows == null || quiverArrows.Count == 0) return;
 
-        currentShotCount++;
+        currentShotCount += amount;
         int requiredShots = Mathf.Max(1, shotsPerArrow);
 
-        if (currentShotCount < requiredShots)
+        while (currentShotCount >= requiredShots)
         {
-            return;
-        }
+            currentShotCount -= requiredShots;
 
-        currentShotCount = 0;
-
-        for (int i = quiverArrows.Count - 1; i >= 0; i--)
-        {
-            if (quiverArrows[i] != null && quiverArrows[i].activeSelf)
+            for (int i = quiverArrows.Count - 1; i >= 0; i--)
             {
-                quiverArrows[i].SetActive(false);
+                if (quiverArrows[i] != null && quiverArrows[i].activeSelf)
+                {
+                    quiverArrows[i].SetActive(false);
+                    break;
+                }
+            }
+
+            if (!HasArrow())
+            {
+                if (autoRefillWhenEmpty)
+                {
+                    RefillQuiver();
+                }
                 break;
             }
-        }
-
-        if (!HasArrow() && autoRefillWhenEmpty)
-        {
-            RefillQuiver();
         }
     }
 

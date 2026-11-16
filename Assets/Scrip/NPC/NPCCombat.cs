@@ -86,6 +86,8 @@ public class NPCCombat : MonoBehaviour
     public float ignoreDuration = 3f;
     public float rollCooldown = 5f;
     protected float rollTimer = 0f;
+    protected bool isAttacking = false;
+    protected bool isApproaching = true;
 
     // fury
     protected bool isFuryMode;
@@ -146,6 +148,14 @@ public class NPCCombat : MonoBehaviour
 
         if (animHandler != null)
             animHandler.UpdateRootMotionState();
+
+        if (isAttacking)
+        {
+            if (animHandler != null && !animHandler.IsAttackingCombo)
+            {
+                isAttacking = false;
+            }
+        }
 
         UpdateAnimationSpeed();
         HandleAttack();
@@ -428,13 +438,28 @@ public class NPCCombat : MonoBehaviour
 
         currentTarget = null;
         currentTargetHealth = null;
+        isAttacking = false;
+        isApproaching = true;
         SafeResetPath();
+        if (agent != null)
+        {
+            agent.velocity = Vector3.zero;
+        }
         agent.nextPosition = transform.position;
     }
 
     protected virtual void HandleMovement()
     {
-        if (animHandler != null && animHandler.IsUsingRootMotion) return;
+        if (isAttacking || (animHandler != null && animHandler.IsUsingRootMotion))
+        {
+            SafeResetPath();
+            if (agent != null)
+            {
+                agent.velocity = Vector3.zero;
+                agent.nextPosition = transform.position;
+            }
+            return;
+        }
 
         if (controller.isGrounded)
             verticalVelocity = -2f;
@@ -446,6 +471,7 @@ public class NPCCombat : MonoBehaviour
             SafeResetPath();
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
             agent.nextPosition = transform.position;
+            isApproaching = true;
             return;
         }
 
@@ -459,7 +485,19 @@ public class NPCCombat : MonoBehaviour
             return;
         }
 
-        if (dist > attackRange)
+        // Hysteresis chống khựng giật/chatter khi player đi vòng quanh ở rìa attackRange
+        if (isApproaching)
+        {
+            if (dist <= attackRange)
+                isApproaching = false;
+        }
+        else
+        {
+            if (dist > attackRange + 0.4f)
+                isApproaching = true;
+        }
+
+        if (isApproaching)
         {
             Vector3 dest = currentTarget.position;
             SafeSetDestination(dest);
@@ -480,8 +518,12 @@ public class NPCCombat : MonoBehaviour
         }
         else
         {
-            // dung yen quay mat
+            // Đã vào cự ly tấn công: đứng yên và xoay mượt mà theo dõi đối thủ
             SafeResetPath();
+            if (agent != null)
+            {
+                agent.velocity = Vector3.zero;
+            }
 
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
 
@@ -490,8 +532,9 @@ public class NPCCombat : MonoBehaviour
             if (dirToTarget.sqrMagnitude > 0.01f)
             {
                 Quaternion targetRot = Quaternion.LookRotation(dirToTarget.normalized);
+                float trackRotSpeed = Mathf.Max(rotationSpeed, 10f);
                 transform.rotation = Quaternion.Slerp(
-                    transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
+                    transform.rotation, targetRot, trackRotSpeed * Time.deltaTime);
             }
         }
 
@@ -613,6 +656,7 @@ public class NPCCombat : MonoBehaviour
             // float rollChance = 1.2f;
             if (Random.value < rollChance)
             {
+                isAttacking = false;
                 Vector3 escapeDir = FindBestRollDirection(attacker);
                 if (escapeDir.sqrMagnitude > 0.01f)
                 {
@@ -736,6 +780,7 @@ public class NPCCombat : MonoBehaviour
 
     public void OnDie()
     {
+        isAttacking = false;
         ClearTarget();
         myHealth.threatMap.Clear();
 
@@ -784,7 +829,7 @@ public class NPCCombat : MonoBehaviour
     {
         if (animHandler == null) return;
 
-        if (animHandler.IsUsingRootMotion)
+        if (isAttacking || animHandler.IsUsingRootMotion)
         {
             animHandler.UpdateLocomotion(0f);
             return;
@@ -832,6 +877,17 @@ public class NPCCombat : MonoBehaviour
 
                 if (angleToTarget <= attackAngle)
                 {
+                    // Snap mặt về phía player dứt khoát trước khi ra đòn để chém chuẩn xác theo hướng player
+                    transform.rotation = Quaternion.LookRotation(direction);
+                    isAttacking = true;
+
+                    SafeResetPath();
+                    if (agent != null)
+                    {
+                        agent.velocity = Vector3.zero;
+                        agent.nextPosition = transform.position;
+                    }
+
                     int attackIndex = Random.Range(0, 5);
                     if (animHandler != null)
                         animHandler.PlayAttack(attackIndex);

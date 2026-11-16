@@ -17,6 +17,7 @@ public class NPCAnimatorHandler : MonoBehaviour
     // để NPCCombat đọc
     public bool IsUsingRootMotion { get; protected set; }
     public bool IsRolling { get; protected set; }
+    public bool IsAttackingCombo { get; protected set; }
 
     protected virtual void Awake()
     {
@@ -36,13 +37,15 @@ public class NPCAnimatorHandler : MonoBehaviour
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
         AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
 
+        IsAttackingCombo = state.IsTag("Combo") || (anim.IsInTransition(0) && next.IsTag("Combo"));
+
         IsUsingRootMotion =
-            state.IsTag("Combo") ||
+            IsAttackingCombo ||
             state.IsTag("Dead") ||
             state.IsTag("Impact") ||
             state.IsTag("Roll") ||
             (anim.IsInTransition(0) &&
-                (next.IsTag("Combo") || next.IsTag("Dead") || next.IsTag("Impact") || next.IsTag("Roll")));
+                (next.IsTag("Dead") || next.IsTag("Impact") || next.IsTag("Roll")));
 
         IsRolling = state.IsTag("Roll") || (anim.IsInTransition(0) && next.IsTag("Roll"));
 
@@ -53,6 +56,7 @@ public class NPCAnimatorHandler : MonoBehaviour
             if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 agent.ResetPath();
+                agent.velocity = Vector3.zero;
             }
         }
 
@@ -64,6 +68,14 @@ public class NPCAnimatorHandler : MonoBehaviour
         if (anim == null) return;
         anim.SetInteger("AttackIndex", attackIndex);
         anim.SetTrigger("DoAttack");
+        IsAttackingCombo = true;
+        IsUsingRootMotion = true;
+        anim.applyRootMotion = true;
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+        {
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+        }
     }
 
     public virtual void PlayRoll()

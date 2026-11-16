@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
@@ -17,16 +18,22 @@ public class PlayerMovement : MonoBehaviour
     [Header("Turn")]
     public float turnCooldown = 0.8f;
 
+    [Header("Roll")]
+    public float rollCooldown = 0.6f;
+    private float lastRollTime = -10f;
+    private List<Collider> ignoredColliders = new List<Collider>();
+    private bool wasRollingLastFrame = false;
+
     private CharacterController controller;
     private float verticalVelocity;
 
     private bool isTurning = false;
     private float lastTurnTime = -10f;
+    private bool isDead = false;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
-
         combat = GetComponent<PlayerCombat>();
 
         if (anim == null)
@@ -35,6 +42,25 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (isDead)
+        {
+            anim.applyRootMotion = true;
+            return;
+        }
+
+        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+        AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
+
+        bool isRolling = state.IsTag("Roll") || (anim.IsInTransition(0) && next.IsTag("Roll"));
+        bool isImpact = state.IsTag("Impact") || (anim.IsInTransition(0) && next.IsTag("Impact"));
+
+        // ROLL INPUT (Phím Space)
+        if (Input.GetKeyDown(KeyCode.Space) && !isRolling && !isImpact && Time.time - lastRollTime > rollCooldown)
+        {
+            PerformRoll();
+            return;
+        }
+
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
@@ -51,8 +77,6 @@ public class PlayerMovement : MonoBehaviour
 
         // tránh chạy chéo vượt tốc độ
         float inputMagnitude = Mathf.Clamp01(inputDir.magnitude);
-
-        // tham vọng tay cầm
         bool isMoving = inputMagnitude > 0.1f;
 
         anim.SetBool("IsMoving", isMoving);
@@ -63,12 +87,12 @@ public class PlayerMovement : MonoBehaviour
         if (isTurning && isMoving)
         {
             isTurning = false;
-
             if (turnCoroutine != null)
                 StopCoroutine(turnCoroutine);
         }
+
         // TURN 180
-        if (!isLocked && !isTurning && !combat.IsAttacking() && Time.time - lastTurnTime > turnCooldown)
+        if (!isLocked && !isTurning && (combat == null || !combat.IsAttacking()) && !isRolling && !isImpact && Time.time - lastTurnTime > turnCooldown)
         {
             if (Input.GetKeyDown(KeyCode.S) || (v < -0.7f && inputMagnitude > 0.5f))
             {
@@ -78,7 +102,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         // MOVEMENT
-        if (!anim.applyRootMotion && isMoving)
+        if (!anim.applyRootMotion && isMoving && !isRolling && !isImpact)
         {
             inputDir.Normalize();
 
@@ -94,16 +118,59 @@ public class PlayerMovement : MonoBehaviour
 
         anim.SetBool("IsRunning", isRunning);
 
-        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
-        AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
+        state = anim.GetCurrentAnimatorStateInfo(0);
+        next = anim.GetNextAnimatorStateInfo(0);
 
         bool isUsingRootMotion =
-            combat.IsAttacking() ||
+            (combat != null && combat.IsAttacking()) ||
             isTurning ||
             state.IsTag("Combo") ||
-            (anim.IsInTransition(0) && next.IsTag("Combo"));
+            state.IsTag("Roll") ||
+            state.IsTag("Impact") ||
+            state.IsTag("Dead") ||
+            (anim.IsInTransition(0) &&
+                (next.IsTag("Combo") || next.IsTag("Roll") || next.IsTag("Impact") || next.IsTag("Dead")));
 
         anim.applyRootMotion = isUsingRootMotion;
+    }
+
+    void PerformRoll()
+    {
+        lastRollTime = Time.time;
+
+        // Cancel combo đấm nếu đang ra đòn
+        if (combat != null)
+        {
+            combat.ForceStopAttack();
+        }
+
+        float h = Input.GetAxisRaw("Horizontal");
+        float v = Input.GetAxisRaw("Vertical");
+        Vector3 inputDir = new Vector3(h, 0, v);
+
+        // Nếu đang bấm phím di chuyển thì xoay mặt về hướng đó trước khi lăn
+        if (inputDir.sqrMagnitude > 0.01f)
+        {
+            Vector3 camForward = cam.transform.forward;
+            Vector3 camRight = cam.transform.right;
+            camForward.y = 0;
+            camRight.y = 0;
+            camForward.Normalize();
+            camRight.Normalize();
+
+            Vector3 rollDir = (camForward * inputDir.z + camRight * inputDir.x).normalized;
+            if (rollDir != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(rollDir);
+            }
+        }
+
+        anim.SetTrigger("DoRoll");
+    }
+
+    public void TriggerRollManual()
+    {
+        PerformRoll();
     }
 
     // FREE MODE
@@ -133,7 +200,6 @@ public class PlayerMovement : MonoBehaviour
     // LOCK MODE
     void HandleLockMovement(Vector3 inputDir, float speed)
     {
-
         Vector3 move =
             transform.right * inputDir.x +
             transform.forward * inputDir.z;
@@ -220,10 +286,69 @@ public class PlayerMovement : MonoBehaviour
         if (!anim.applyRootMotion) return;
 
         Vector3 delta = anim.deltaPosition;
-        delta.y = 0f;
+        delta.y += verticalVelocity * Time.deltaTime;
 
-        controller.Move(delta);
+        AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
+        bool rolling = state.IsTag("Roll");
+
+        if (rolling)
+        {
+            HandleRollCollision();
+            controller.Move(delta);
+            wasRollingLastFrame = true;
+        }
+        else
+        {
+            if (wasRollingLastFrame)
+            {
+                RestoreRollCollision();
+            }
+            controller.Move(delta);
+        }
 
         transform.rotation *= anim.deltaRotation;
+    }
+
+    private void HandleRollCollision()
+    {
+        int characterLayer = LayerMask.NameToLayer("Character");
+        if (characterLayer != -1)
+        {
+            Collider[] nearby = Physics.OverlapSphere(transform.position, 3f, 1 << characterLayer);
+            foreach (var col in nearby)
+            {
+                if (col != controller && col.gameObject != gameObject)
+                {
+                    Physics.IgnoreCollision(controller, col, true);
+                    if (!ignoredColliders.Contains(col))
+                        ignoredColliders.Add(col);
+                }
+            }
+        }
+    }
+
+    private void RestoreRollCollision()
+    {
+        foreach (var col in ignoredColliders)
+        {
+            if (col != null)
+                Physics.IgnoreCollision(controller, col, false);
+        }
+        ignoredColliders.Clear();
+        wasRollingLastFrame = false;
+    }
+
+    public void SetDead(bool dead)
+    {
+        isDead = dead;
+        if (!dead)
+        {
+            RestoreRollCollision();
+        }
+    }
+
+    public void SetDeadState(bool dead)
+    {
+        SetDead(dead);
     }
 }
