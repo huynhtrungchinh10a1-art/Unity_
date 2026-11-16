@@ -61,7 +61,7 @@ public class ArrowProjectile : MonoBehaviour
         airTimer += Time.deltaTime;
         if (airTimer >= maxAirTime)
         {
-            Destroy(gameObject);
+            ReturnToPool();
             return;
         }
 
@@ -197,18 +197,30 @@ public class ArrowProjectile : MonoBehaviour
             // Gắn mũi tên vào xương gần nhất của nhân vật để uốn lượn theo cử động
             Transform closestBone = FindClosestBone(other.transform, hitPoint);
             transform.parent = closestBone;
+
+            // Nếu cắm vào NPC: Cập nhật renderers cho NPC và tự động tắt mesh nếu NPC đang bị culled ở xa
+            NPCCombat npcCombat = other.GetComponentInParent<NPCCombat>();
+            if (npcCombat != null)
+            {
+                npcCombat.RefreshRenderers();
+                if (npcCombat.IsCulled)
+                {
+                    MeshRenderer mr = GetComponentInChildren<MeshRenderer>();
+                    if (mr != null) mr.enabled = false;
+                }
+            }
         }
         // Nếu cắm vào đất (Terrain) / môi trường: Không đổi parent để giữ vị trí độc lập, không bị ảnh hưởng scale
 
         Collider col = GetComponent<Collider>();
-        if (col != null) Destroy(col);
+        if (col != null) col.enabled = false;
 
         Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null) Destroy(rb);
+        if (rb != null) rb.isKinematic = true;
 
         if (!stayOnMap)
         {
-            Destroy(gameObject, disappearDelay);
+            StartCoroutine(RoutineReturnDelay(disappearDelay));
         }
 
         // Rung lắc nhẹ đuôi tên khi vừa cắm vào
@@ -300,7 +312,7 @@ public class ArrowProjectile : MonoBehaviour
         transform.localRotation = initialRot;
 
         // Nếu cắm trên mặt đất (không gắn vào xương nhân vật):
-        // Chuyển giao ma trận cho GroundArrowManager (Total War GPU Instancing) và hủy GameObject
+        // Chuyển giao ma trận cho GroundArrowManager (Total War GPU Instancing) và trả mũi tên về Pool
         if (transform.parent == null)
         {
             MeshFilter mf = GetComponentInChildren<MeshFilter>();
@@ -309,12 +321,53 @@ public class ArrowProjectile : MonoBehaviour
             {
                 Transform visualT = mf.transform;
                 GroundArrowManager.Instance.RegisterArrow(mf.sharedMesh, mr.sharedMaterial, visualT.localToWorldMatrix);
-                Destroy(gameObject);
+                ReturnToPool();
                 yield break;
             }
         }
 
-        Destroy(this);
+        // Nếu cắm vào xương nhân vật: tắt script ArrowProjectile để ngừng tính toán (thay vì Destroy(this))
+        enabled = false;
+    }
+
+    public void ReturnToPool()
+    {
+        if (ArrowPoolManager.Instance != null)
+        {
+            ArrowPoolManager.Instance.ReturnArrow(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private System.Collections.IEnumerator RoutineReturnDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ReturnToPool();
+    }
+
+    public void ResetProjectile()
+    {
+        StopAllCoroutines();
+        hasHit = false;
+        airTimer = 0f;
+        transform.parent = null;
+        transform.localScale = Vector3.one;
+        enabled = true;
+
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true;
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+        }
+
+        MeshRenderer mr = GetComponentInChildren<MeshRenderer>();
+        if (mr != null) mr.enabled = true;
     }
 }
 

@@ -16,6 +16,9 @@ public class ArcherCombat : NPCCombat
     public float kiteSafeDistance = 9.5f;
 
     public float aimDuration = 1.5f;
+    [Header("Ranged Attack Cooldown (Thời gian nghỉ sau bắn)")]
+    public float minShootCooldown = 1.8f;
+    public float maxShootCooldown = 2.6f;
     public float sprintSpeed = 7.2f;
     public float sprintBurstDuration = 1.2f;
     public float executeHealthThreshold = 0.2f;
@@ -59,7 +62,7 @@ public class ArcherCombat : NPCCombat
     private bool isNextShotHighSkill = false;
 
     [Header("Archer Targeting Limits")]
-    public int maxTotalAttackers = 5; // Archer chi quan tam tong so ke tan cong (cung + can chien) du 5 chua
+    public int maxTotalAttackers = 5; 
 
     [Header("Archer Targeting Scoring")]
     public float weightLowHealth = 0.5f;
@@ -515,7 +518,7 @@ public class ArcherCombat : NPCCombat
                 if (aimTimer <= 0 && angleToTarget <= 35f)
                 {
                     if (archerAnim != null) archerAnim.PlayRangedAttack();
-                    attackCooldownTimer = Random.Range(0.8f, 1.4f);
+                    attackCooldownTimer = Random.Range(minShootCooldown, maxShootCooldown);
                     meleeCooldownTimer = 1.5f;
                     isAiming = false;
                     isFatigueSniping = false; // Hoàn tất cú bắn tỉa khi đuối sức

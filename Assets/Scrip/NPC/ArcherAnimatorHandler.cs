@@ -349,7 +349,9 @@ public class ArcherAnimatorHandler : NPCAnimatorHandler
 
         Quaternion spawnRot = Quaternion.LookRotation(shootDirection);
 
-        GameObject arrowObj = Instantiate(arrowPrefab, spawnPos, spawnRot);
+        GameObject arrowObj = ArrowPoolManager.Instance != null 
+            ? ArrowPoolManager.Instance.GetArrow(spawnPos, spawnRot, arrowPrefab) 
+            : Instantiate(arrowPrefab, spawnPos, spawnRot);
         ArrowProjectile proj = arrowObj.GetComponent<ArrowProjectile>();
         if (proj != null)
         {
@@ -437,7 +439,9 @@ public class ArcherAnimatorHandler : NPCAnimatorHandler
             Vector3 shootDir = (dirXZ * cosTheta + Vector3.up * sinTheta).normalized;
             Quaternion spawnRot = Quaternion.LookRotation(shootDir);
 
-            GameObject arrowObj = Instantiate(arrowPrefab, arrowSpawn, spawnRot);
+            GameObject arrowObj = ArrowPoolManager.Instance != null 
+                ? ArrowPoolManager.Instance.GetArrow(arrowSpawn, spawnRot, arrowPrefab) 
+                : Instantiate(arrowPrefab, arrowSpawn, spawnRot);
             ArrowProjectile proj = arrowObj.GetComponent<ArrowProjectile>();
             if (proj != null)
             {

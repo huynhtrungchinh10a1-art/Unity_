@@ -24,11 +24,13 @@ public class NPCCombat : MonoBehaviour
     public int maxAttackersPerTarget = 3;      // Toi da so luong can chien bu vao 1 muc tieu
     public int maxTotalAttackersPerTarget = 5; // Toi da tong so nguoi tan cong (can chien + cung) vao 1 muc tieu
 
-    [Header("Distance Animation Culling (Fog)")]
+    [Header("Distance Culling & Optimization")]
     public bool enableDistanceAnimCulling = true;
-    public float animCullDistance = 45f; // Qua 45m (trong suong mu) thi tam dung Animator
-    private float distanceCullTimer = 0f;
+    public float animCullDistance = 45f; // Qua 45m: tắt MeshRenderer + Animator + tăng scanInterval
     private bool isAnimCulled = false;
+    [HideInInspector] public int cullingIndex = -1;
+    protected Renderer[] cachedRenderers;
+    public bool IsCulled => isAnimCulled;
 
     [Header("Scoring (Global)")]
     public float weightAttackerCount = 0.75f;
@@ -57,6 +59,9 @@ public class NPCCombat : MonoBehaviour
     [Header("Separation")]
     public float separationDistance = 2.5f;
     public float separationForce = 5f;
+
+    [Header("Weapons (Kéo trực tiếp vào đây)")]
+    public GameObject[] equippedWeapons;
 
     protected CharacterController controller;
     protected float verticalVelocity;
@@ -139,6 +144,14 @@ public class NPCCombat : MonoBehaviour
             }
         }
 
+        // Lưu cache toàn bộ Renderers (SkinnedMeshRenderer, MeshRenderer kiếm/khiên/tóc...)
+        cachedRenderers = GetComponentsInChildren<Renderer>(true);
+
+        if (NPCCullingManager.Instance != null)
+        {
+            NPCCullingManager.Instance.RegisterNPC(this);
+        }
+
         scanOffset = Random.Range(0f, scanInterval);
     }
 
@@ -168,13 +181,6 @@ public class NPCCombat : MonoBehaviour
         }
 
         HandleMovement();
-
-        distanceCullTimer += Time.deltaTime;
-        if (distanceCullTimer >= 0.35f)
-        {
-            distanceCullTimer = 0f;
-            UpdateDistanceAnimationCulling();
-        }
 
         if (ignorePlayerPriority)
         {
@@ -784,10 +790,15 @@ public class NPCCombat : MonoBehaviour
         ClearTarget();
         myHealth.threatMap.Clear();
 
-        if (isAnimCulled && anim != null)
+        if (NPCCullingManager.Instance != null)
         {
-            isAnimCulled = false;
-            anim.enabled = true;
+            NPCCullingManager.Instance.UnregisterNPC(this);
+        }
+
+        // Đảm bảo bật lại để chạy animation chết và hiển thị xác
+        if (isAnimCulled)
+        {
+            SetCulled(false);
         }
 
         if (isRegisteredInGrid && BattlefieldManager.Instance != null)
@@ -796,33 +807,82 @@ public class NPCCombat : MonoBehaviour
             isRegisteredInGrid = false;
         }
 
+        int deadIndex = Random.Range(0, 3);
         if (animHandler != null)
         {
-            int deadIndex = Random.Range(0, 3);
             animHandler.PlayDeath(deadIndex);
         }
         agent.isStopped = true;
         enabled = false;
+
+        // GIAI ĐOẠN 4: Lên lịch nướng xác và tách vũ khí nằm trên đất sau 1.8s
+        if (CorpseManager.Instance != null)
+        {
+            CorpseManager.Instance.ScheduleCorpseBake(gameObject, deadIndex, equippedWeapons, 1.8f);
+        }
+    }
+
+    public void DropWeapons()
+    {
+        if (equippedWeapons == null || equippedWeapons.Length == 0) return;
+
+        foreach (var weapon in equippedWeapons)
+        {
+            if (weapon == null) continue;
+            weapon.transform.SetParent(null);
+        }
+    }
+
+    protected virtual void OnDestroy()
+    {
+        if (NPCCullingManager.Instance != null)
+        {
+            NPCCullingManager.Instance.UnregisterNPC(this);
+        }
+    }
+
+    public void SetCulled(bool culled)
+    {
+        if (culled == isAnimCulled) return;
+
+        isAnimCulled = culled;
+
+        if (anim != null)
+        {
+            anim.enabled = !culled;
+        }
+
+        // Tắt/bật toàn bộ Renderers (SkinnedMeshRenderer, MeshRenderer kiếm/khiên/tóc/mũi tên...)
+        SetRenderersEnabled(!culled);
+
+        // Giãn cách quét AI/Physics khi ở xa: ở gần 0.5s, ở xa 2.0s để giải phóng CPU
+        scanInterval = culled ? 2.0f : 0.5f;
+    }
+
+    public void SetRenderersEnabled(bool isEnabled)
+    {
+        if (cachedRenderers == null || cachedRenderers.Length == 0)
+        {
+            cachedRenderers = GetComponentsInChildren<Renderer>(true);
+        }
+
+        for (int i = 0; i < cachedRenderers.Length; i++)
+        {
+            if (cachedRenderers[i] != null)
+            {
+                cachedRenderers[i].enabled = isEnabled;
+            }
+        }
+    }
+
+    public void RefreshRenderers()
+    {
+        cachedRenderers = GetComponentsInChildren<Renderer>(true);
     }
 
     protected virtual void UpdateDistanceAnimationCulling()
     {
-        if (!enableDistanceAnimCulling || anim == null) return;
-
-        if (playerObject == null)
-        {
-            playerObject = GameObject.FindGameObjectWithTag("Player");
-            if (playerObject == null) return;
-        }
-
-        float dist = Vector3.Distance(transform.position, playerObject.transform.position);
-        bool shouldCull = dist > animCullDistance;
-
-        if (shouldCull != isAnimCulled)
-        {
-            isAnimCulled = shouldCull;
-            anim.enabled = !shouldCull;
-        }
+        // Quản lý culling tập trung đã được chuyển giao cho NPCCullingManager
     }
 
     protected virtual void UpdateAnimationSpeed()

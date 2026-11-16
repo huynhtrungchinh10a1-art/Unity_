@@ -805,7 +805,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: 7db962f2a3faf5b438598d97e01e4da2,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1082271958561512970, guid: 7db962f2a3faf5b438598d97e01e4da2,
         type: 3}
@@ -1067,6 +1067,7 @@ MonoBehaviour:
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
   animCullDistance: 45
+  cullingIndex: -1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -1092,6 +1093,8 @@ MonoBehaviour:
   kiteRange: 6.5
   kiteSafeDistance: 9.5
   aimDuration: 1.5
+  minShootCooldown: 3
+  maxShootCooldown: 4.5
   sprintSpeed: 7.2
   sprintBurstDuration: 1.2
   executeHealthThreshold: 0.2
