@@ -19,7 +19,7 @@ public class PlayerMovement : MonoBehaviour
     public float turnCooldown = 0.8f;
 
     [Header("Roll")]
-    public float rollCooldown = 0.6f;
+    public float rollCooldown = 5f;
     private float lastRollTime = -10f;
     private List<Collider> ignoredColliders = new List<Collider>();
     private bool wasRollingLastFrame = false;

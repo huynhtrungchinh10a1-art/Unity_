@@ -135,7 +135,7 @@ public class PlayerCombat : MonoBehaviour
 
     void OnDamaged(GameObject attacker, float damage)
     {
-        if (health != null && !health.isAlive) return;
+        if (health != null && (!health.isAlive || health.currentHealth <= 0)) return;
 
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
         if (state.IsTag("Roll") || state.IsTag("Dead")) return;
@@ -163,9 +163,18 @@ public class PlayerCombat : MonoBehaviour
             movement.SetDead(true);
         }
 
-        int deadIndex = Random.Range(0, 3);
-        anim.SetInteger("DeadIndex", deadIndex);
-        anim.SetTrigger("DoDead");
+        if (anim != null)
+        {
+            anim.ResetTrigger("TakeAttack");
+            anim.ResetTrigger("Attack");
+            anim.ResetTrigger("DoRoll");
+
+            int deadIndex = Random.Range(0, 3);
+            anim.SetInteger("DeadIndex", deadIndex);
+            anim.ResetTrigger("DoDead");
+            anim.SetTrigger("DoDead");
+        }
+
         enabled = false;
     }
 }

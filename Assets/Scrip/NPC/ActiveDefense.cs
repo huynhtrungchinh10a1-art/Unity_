@@ -52,6 +52,12 @@ public class ActiveDefense : MonoBehaviour
     // chay khi phong thu
     public void ReactToWarning(GameObject attacker = null)
     {
+        // Player tuyệt đối không bị tự động xoay mặt hay đỡ đòn của NPC AI
+        if (CompareTag("Player") || GetComponent<PlayerMovement>() != null)
+        {
+            return;
+        }
+
         if (myHealth != null && !myHealth.isAlive)
         {
             return;
@@ -93,6 +99,11 @@ public class ActiveDefense : MonoBehaviour
 
     public bool TryBlock(ref float damage)
     {
+        if (CompareTag("Player") || GetComponent<PlayerMovement>() != null)
+        {
+            return false;
+        }
+
         if (animHandler != null && animHandler.IsBlocked())
         {
             damage = 0f;

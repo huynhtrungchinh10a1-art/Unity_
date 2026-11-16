@@ -75,6 +75,14 @@ public class HealthAndTeam : MonoBehaviour
         }
 
         currentHealth -= finalDamage;
+
+        if (currentHealth <= 0)
+        {
+            currentHealth = 0;
+            Die();
+            return isBlocked;
+        }
+
         if (finalDamage > 0)
         {
             AddThreat(attacker, finalDamage);
@@ -85,23 +93,28 @@ public class HealthAndTeam : MonoBehaviour
         }
         onDamaged?.Invoke(attacker, finalDamage);
 
-        if (currentHealth <= 0)
+        if (attacker != null && (attacker.CompareTag("Player") || attacker.GetComponent<PlayerMovement>() != null))
         {
-            Die();
+            if (BossHUD.Instance != null && gameObject != attacker)
+            {
+                BossHUD.Instance.SetTarget(this);
+            }
         }
 
         return isBlocked;
     }
     void Die()
     {
+        if (!isAlive) return;
         isAlive = false;
-        NotifyAllAttackers();
         onDie?.Invoke();
+        NotifyAllAttackers();
     }
 
     void NotifyAllAttackers()
     {
-        foreach (var attacker in currentAttackers)
+        var attackersCopy = currentAttackers.ToArray();
+        foreach (var attacker in attackersCopy)
         {
             if (attacker != null)
             {
