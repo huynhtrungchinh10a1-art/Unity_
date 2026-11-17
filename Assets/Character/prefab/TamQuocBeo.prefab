@@ -707,7 +707,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1082271958561512970, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
@@ -1005,10 +1005,14 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
   animCullDistance: 45
+  cullingIndex: -1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -1027,6 +1031,7 @@ MonoBehaviour:
   attackCooldownTimer: 0
   separationDistance: 2.5
   separationForce: 5
+  equippedWeapons: []
   ignoreDuration: 3
   rollCooldown: 5
 --- !u!114 &1884766444672461462
