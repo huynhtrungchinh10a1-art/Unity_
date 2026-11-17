@@ -90,6 +90,8 @@ public class BattlefieldManager : MonoBehaviour
         return null;
     }
 
+    // Tạm thời comment toàn bộ Gizmos để tối ưu hiệu năng tuyệt đối khi test 10.000 NPC (tránh GC Alloc và sụt FPS trong Scene View)
+    /*
     void OnDrawGizmos()
     {
         // Vẽ lưới ô Grid (kích thước cellSize)
@@ -199,4 +201,5 @@ public class BattlefieldManager : MonoBehaviour
             }
         }
     }
+    */
 }

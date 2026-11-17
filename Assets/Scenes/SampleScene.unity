@@ -803,6 +803,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -1504,6 +1507,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -4376,6 +4382,81 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 404281047}
   m_SourcePrefab: {fileID: 100100000, guid: 7db962f2a3faf5b438598d97e01e4da2, type: 3}
+--- !u!1 &250329853
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 250329854}
+  - component: {fileID: 250329856}
+  - component: {fileID: 250329855}
+  m_Layer: 5
+  m_Name: PanicBar_Ease
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &250329854
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250329853}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552748727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 33.690186, y: -14.025902}
+  m_SizeDelta: {x: 291.4949, y: 16.0986}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &250329855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250329853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.5254902, g: 0.35686275, b: 0.1254902, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 95a019c21ef66c64b850867d114736e5, type: 3}
+  m_Type: 3
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 0
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &250329856
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 250329853}
+  m_CullTransparentMesh: 1
 --- !u!1 &254793482
 GameObject:
   m_ObjectHideFlags: 0
@@ -4969,7 +5050,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 4a5fb37c6118e274fbf46d0f8a9eb624, type: 3}
+  m_audioClip: {fileID: 8300000, guid: ca779e8b55ba1344489758475d7687a4, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 0.5
   m_Pitch: 1
@@ -5539,6 +5620,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -10212,6 +10296,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -11458,6 +11545,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -12372,8 +12462,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd2f52075e4a7884faaa927299a5ec7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  arrowMesh: {fileID: 0}
-  arrowMaterial: {fileID: 0}
+  arrowMesh: {fileID: -8802744106172592671, guid: 4c720855594f46646b5617c947f802a5,
+    type: 3}
+  arrowMaterial: {fileID: 5863650252929523565, guid: 4c720855594f46646b5617c947f802a5,
+    type: 3}
   castShadows: 1
   receiveShadows: 1
   enableDistanceCulling: 1
@@ -13019,6 +13111,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -19650,7 +19745,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1210744754
 Transform:
   m_ObjectHideFlags: 0
@@ -25989,6 +26084,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -27333,6 +27431,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -28252,8 +28353,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1634233706}
+  - {fileID: 250329854}
   - {fileID: 106920370}
+  - {fileID: 2132823118}
   - {fileID: 1459414892}
+  - {fileID: 1711564236}
   m_Father: {fileID: 1994514323}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -28315,6 +28419,10 @@ MonoBehaviour:
   healthFillImage: {fileID: 106920371}
   healthEaseImage: {fileID: 1634233707}
   healthText: {fileID: 1459414893}
+  panicSystem: {fileID: 1556592828}
+  panicFillImage: {fileID: 2132823119}
+  panicEaseImage: {fileID: 250329855}
+  panicText: {fileID: 1711564237}
   easeDelay: 0.4
   easeSpeed: 0.2
 --- !u!1001 &1554821400
@@ -28666,6 +28774,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1556592825}
+    - targetCorrespondingSourceObject: {fileID: 6001820041929124501, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1556592828}
   m_SourcePrefab: {fileID: 100100000, guid: 1a6d34e690ff9b646ac41162b0941bb5, type: 3}
 --- !u!95 &1556592816 stripped
 Animator:
@@ -28721,6 +28833,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b6ab91cbf65a1d44889df00792761dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1556592828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525741658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7843ef1ed6314cf4b64f952de26a9583, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentPanic: 0
+  maxCourageCap: 100
+  enablePanicDeath: 1
+  outerZoneRadius: 18
+  dangerZoneRadius: 3.5
+  scanInterval: 0.2
+  characterLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  panicRatePerOuterEnemy: 1
+  dangerZoneMultiplier: 3.5
+  calmDownRate: 4
+  allyReliefPerPerson: 1.2
+  maxAllyCalmRate: 6
+  playerCamera: {fileID: 330585545}
+  panicOnWitnessAllyDeath: 15
+  heartbeatAudioSource: {fileID: 0}
+  breathingAudioSource: {fileID: 0}
+  heartbeatClip: {fileID: 8300000, guid: bbc6254be2c36064ab5950f0f324d123, type: 3}
+  heavyBreathingClip: {fileID: 8300000, guid: 962bdfab0a15fd9459a346b023ada6e8, type: 3}
+  breathingVolume: 1
+  minBreathingVolRatio: 0.12
+  heartbeatVolume: 1
+  audioFadeSpeed: 4
+  heartbeatStartThreshold: 15
+  battleAmbienceAudioSource1: {fileID: 0}
+  battleAmbienceClip1: {fileID: 8300000, guid: 4bc9c9a51a95fe2439da96937026937d, type: 3}
+  layer1VolumeScale: 1
+  battleAmbienceAudioSource2: {fileID: 0}
+  battleAmbienceClip2: {fileID: 8300000, guid: 332f9d76fd5e8b7478ecd7af039de292, type: 3}
+  layer2VolumeScale: 1
+  maxBattleAmbienceVolume: 0.85
+  minBattleAmbienceVolume: 0.15
+  maxCrowdForFullVolume: 15
+  battleAudioFadeSpeed: 2.5
+  freezePanic: 0
+  postProcessVolume: {fileID: 0}
+  vignetteThreshold: 1
+  basePanicVignetteIntensity: 0.25
+  maxPanicVignetteIntensity: 0.5
+  maxPanicUIAlpha: 0.7
+  uiPanicVignetteImage: {fileID: 0}
+  lowHealthThreshold: 0.4
+  baseBloodVignetteIntensity: 0.25
+  maxBloodVignetteIntensity: 0.42
+  maxBloodUIAlpha: 0.03
+  bloodVignetteColor: {r: 0.5, g: 0.06, b: 0.08, a: 1}
+  uiBloodVignetteImage: {fileID: 0}
+  enableVignettePulse: 1
+  pulseSpeedMin: 3.5
+  pulseSpeedMax: 7.5
+  pulseAmount: 0.05
+  debugStateDescription: "B\xECnh th\u01B0\u1EDDng"
+  debugOuterEnemies: 0
+  debugInnerEnemies: 0
+  debugAlliesNearby: 0
+  debugTrackedAlliesCount: 0
+  debugCurrentPanicRate: 0
+  debugBattleVolume: 0
 --- !u!1001 &1558432093
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29494,7 +29677,7 @@ PrefabInstance:
     - target: {fileID: 3555671646659090429, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4184855787190570311, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
@@ -30328,6 +30511,142 @@ Transform:
   m_Children: []
   m_Father: {fileID: 879083247}
   m_LocalEulerAnglesHint: {x: 0, y: -89.079, z: 0}
+--- !u!1 &1711564235
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1711564236}
+  - component: {fileID: 1711564238}
+  - component: {fileID: 1711564237}
+  m_Layer: 5
+  m_Name: Panic_Text
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1711564236
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711564235}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552748727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 36.7, y: -14.3}
+  m_SizeDelta: {x: 258.0021, y: 128.723}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1711564237
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711564235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: 'Panic 100/100
+
+'
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 18
+  m_fontSizeBase: 18
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 0
+  m_fontSizeMax: 10
+  m_fontStyle: 0
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_enableWordWrapping: 0
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 0
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &1711564238
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711564235}
+  m_CullTransparentMesh: 1
 --- !u!4 &1721450718 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7267492857096483251, guid: e794039381c05e24cb2508de68d6e2cf,
@@ -30418,6 +30737,9 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
@@ -31453,7 +31775,7 @@ PrefabInstance:
     - target: {fileID: 3555671646659090429, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4184855787190570311, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
@@ -31512,8 +31834,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
+      propertyPath: debugTargeting
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
+        type: 3}
       propertyPath: equippedWeapons.Array.size
-      value: 2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
@@ -32751,12 +33078,12 @@ PrefabInstance:
     - target: {fileID: 7267492857096483251, guid: e794039381c05e24cb2508de68d6e2cf,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 26.712
+      value: 32.47
       objectReference: {fileID: 0}
     - target: {fileID: 7267492857096483251, guid: e794039381c05e24cb2508de68d6e2cf,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 123.5
+      value: 86.65
       objectReference: {fileID: 0}
     - target: {fileID: 7267492857096483251, guid: e794039381c05e24cb2508de68d6e2cf,
         type: 3}
@@ -32797,6 +33124,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: TamQuocBeo
+      objectReference: {fileID: 0}
+    - target: {fileID: 8039068903539534601, guid: e794039381c05e24cb2508de68d6e2cf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8578329933304331076, guid: e794039381c05e24cb2508de68d6e2cf,
+        type: 3}
+      propertyPath: maxHealth
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8578329933304331076, guid: e794039381c05e24cb2508de68d6e2cf,
+        type: 3}
+      propertyPath: currentHealth
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -34099,6 +34441,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 879083247}
   m_LocalEulerAnglesHint: {x: 0, y: -89.079, z: 0}
+--- !u!1 &2132823117
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2132823118}
+  - component: {fileID: 2132823120}
+  - component: {fileID: 2132823119}
+  m_Layer: 5
+  m_Name: PanicBar_Fill
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2132823118
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132823117}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1552748727}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 33.690186, y: -14.025902}
+  m_SizeDelta: {x: 291.4949, y: 16.0986}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2132823119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132823117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 95a019c21ef66c64b850867d114736e5, type: 3}
+  m_Type: 3
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 0
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &2132823120
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132823117}
+  m_CullTransparentMesh: 1
 --- !u!1001 &2135392482
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34387,6 +34804,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: TamQuoc_Cung
+      objectReference: {fileID: 0}
+    - target: {fileID: 7550338051963361743, guid: ee3ac97b13a4fb14cad99cd8bdfa949f,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

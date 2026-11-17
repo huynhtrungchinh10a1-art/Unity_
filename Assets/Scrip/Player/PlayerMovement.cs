@@ -65,7 +65,22 @@ public class PlayerMovement : MonoBehaviour
         float v = Input.GetAxis("Vertical");
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float speed = isRunning ? runSpeed : walkSpeed;
+        float currentRunSpeed = runSpeed;
+
+        if (PlayerPanicSystem.Instance != null)
+        {
+            float panic = PlayerPanicSystem.Instance.currentPanic;
+            if (panic >= 80f)
+            {
+                isRunning = false; // >= 80: Chân run lẩy bẩy, cấm chạy, chỉ cho đi bộ
+            }
+            else if (panic >= 50f)
+            {
+                currentRunSpeed *= 0.8f; // 50 -> 80: Giảm 20% tốc độ chạy
+            }
+        }
+
+        float speed = isRunning ? currentRunSpeed : walkSpeed;
 
         Vector3 inputDir = new Vector3(h, 0, v);
 

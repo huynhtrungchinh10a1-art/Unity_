@@ -78,7 +78,7 @@ public class CorpseManager : MonoBehaviour
         }
     }
 
-    public void ScheduleCorpseBake(GameObject npcObj, int deadIndex, GameObject[] equippedWeapons = null, float delay = 1.8f)
+    public void ScheduleCorpseBake(GameObject npcObj, int deadIndex, GameObject[] equippedWeapons = null, float delay = 3f)
     {
         if (npcObj == null) return;
         StartCoroutine(RoutineScheduleBake(npcObj, deadIndex, equippedWeapons, delay));

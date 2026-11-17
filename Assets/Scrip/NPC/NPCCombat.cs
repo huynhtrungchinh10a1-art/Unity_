@@ -20,6 +20,16 @@ public class NPCCombat : MonoBehaviour
     public float outnumberedCooldownMultiplier = 0.5f;
     public float commitLockTime = 1.2f;
 
+    [Header("Duel & Retaliation")]
+    public float duelDuration = 4.0f; // Thời gian giữ chân solo khi bị NPC khác đánh
+    public float duelCooldown = 2.0f; // 2 giây thả cửa: phớt lờ đệ, lao thẳng vào Player!
+    protected HealthAndTeam duelTarget;
+    protected float duelTimer;
+    protected float nextDuelAllowedTime = 0f;
+
+    [Header("Debug")]
+    public bool debugTargeting = false;
+
     [Header("Targeting Limits")]
     public int maxAttackersPerTarget = 3;      // Toi da so luong can chien bu vao 1 muc tieu
     public int maxTotalAttackersPerTarget = 5; // Toi da tong so nguoi tan cong (can chien + cung) vao 1 muc tieu
@@ -82,7 +92,7 @@ public class NPCCombat : MonoBehaviour
     protected bool ignorePlayerPriority;
 
     // timer & range
-    protected float lastSwitchTime;
+    protected float lastSwitchTime = -999f;
     protected float commitTimer;
     protected float noTargetTimer;
     protected float currentDetectionRange;
@@ -158,6 +168,18 @@ public class NPCCombat : MonoBehaviour
     protected virtual void Update()
     {
         HandleFury();
+
+        if (duelTarget != null)
+        {
+            duelTimer -= Time.deltaTime;
+            if (duelTimer <= 0f || !duelTarget.isAlive)
+            {
+                duelTarget = null;
+                nextDuelAllowedTime = Time.time + duelCooldown; // Bật 2s miễn nhiễm kiềm chân để kiên quyết dí Player!
+                if (debugTargeting)
+                    Debug.Log($"<color=orange>[NPC {name}] Hết 4s Duel -> Vào 2s THẢ CỬA: Kiên quyết dí Player!</color>");
+            }
+        }
 
         if (animHandler != null)
             animHandler.UpdateRootMotionState();
@@ -278,63 +300,97 @@ public class NPCCombat : MonoBehaviour
 
     void HandleDecisionAndAction()
     {
-        if (Time.time < commitTimer) return;
+        if (Time.time < commitTimer)
+        {
+            if (debugTargeting)
+                Debug.Log($"<color=orange>[NPC {name}] Bỏ qua xét target vì kẹt commitTimer còn: {(commitTimer - Time.time):F2}s</color>");
+            return;
+        }
 
         HealthAndTeam best = DecideTarget();
 
         if (best != null && best != currentTargetHealth)
         {
             float cooldown = GetEffectiveCooldown();
-            if (Time.time - lastSwitchTime >= cooldown)
+            float timeSinceSwitch = Time.time - lastSwitchTime;
+            if (timeSinceSwitch >= cooldown)
             {
+                if (debugTargeting)
+                    Debug.Log($"<color=green>[NPC {name}] ĐỔI TARGET: {currentTarget?.name} -> {best.name}</color>");
                 SwitchToTarget(best);
                 commitTimer = Time.time + commitLockTime;
                 lastSwitchTime = Time.time;
+            }
+            else
+            {
+                if (debugTargeting)
+                    Debug.Log($"<color=yellow>[NPC {name}] Muốn đổi sang {best.name} nhưng KẸT COOLDOWN: còn {(cooldown - timeSinceSwitch):F2}s</color>");
             }
         }
     }
 
     protected virtual HealthAndTeam DecideTarget()
     {
-        float bestScore = float.MaxValue;
-        HealthAndTeam best = null;
-
-        // Reactive layer
-        if (myHealth.currentAttackers.Count > 0)
+        // 1. Ưu tiên số 1: Đang trong thời gian DUEL với kẻ vừa đánh mình -> Khóa mục tiêu vào kẻ đó!
+        if (duelTarget != null && duelTarget.isAlive)
         {
-            Transform lowestAttacker = GetLowestHealthAttacker();
-            if (lowestAttacker != null)
+            if (debugTargeting)
+                Debug.Log($"<color=cyan>[NPC {name}] [DUEL] Đang bị giữ chân đánh {duelTarget.name} (còn {duelTimer:F1}s)</color>");
+            return duelTarget;
+        }
+
+        // 2. Ưu tiên số 2: Fury Mode nếu bị Player đánh -> Dí Player
+        if (isFuryMode && playerHealth != null && playerHealth.isAlive && myHealth.IsEnemy(playerHealth.teamCurrent))
+        {
+            float distToPlayer = Vector3.Distance(transform.position, playerObject.transform.position);
+            if (distToPlayer <= currentDetectionRange)
             {
-                HealthAndTeam h = lowestAttacker.GetComponent<HealthAndTeam>();
-                float reactiveScore = ComputeReactiveScore(h);
-                best = h;
-                bestScore = reactiveScore;
+                if (debugTargeting)
+                    Debug.Log($"<color=red>[NPC {name}] [FURY] Đang kích hoạt Fury lên Player!</color>");
+                return playerHealth;
             }
         }
 
-        // Global layer
+        // 3. Toàn cục:
+        // - Nếu có Player trong tầm: Player có điểm -1.5f nên LUÔN ĐƯỢC ƯU TIÊN SỐ 1!
+        // - Nếu KHÔNG CÓ Player (ngoài tầm hoặc đã chết): Tự động xét duyệt tất cả các NPC khác để chọn mục tiêu tốt nhất!
+        float bestScore = float.MaxValue;
+        HealthAndTeam best = null;
+
         foreach (var enemy in visibleEnemies)
         {
             float score = ComputeGlobalScore(enemy);
 
-            // uu tien target cu 1 ti
+            // Ưu tiên target cũ một chút để tránh giật giật đổi mục tiêu liên tục
             if (enemy == currentTargetHealth)
                 score -= hysteresisBonus;
 
-            // skip target da day nguoi
+            // Bỏ qua target nếu đã đầy người bu vào
             bool isMyCurrentTarget = (enemy == currentTargetHealth);
             bool isFull = IsTargetFull(enemy);
 
             if (isFull && !isMyCurrentTarget)
+            {
+                if (debugTargeting)
+                    Debug.Log($"[NPC {name}] [Global] Bỏ qua {enemy.name} vì Target Full ({enemy.GetMeleeAttackerCount()}/{maxAttackersPerTarget})");
                 continue;
+            }
 
-            // neu zone day, cong them diem phat lon de uu tien cac zone trong hon
+            // Phạt điểm nếu zone quá đông đúc
             if (BattlefieldManager.Instance != null && BattlefieldManager.Instance.IsZoneCrowded(enemy.transform.position))
             {
                 if (!isMyCurrentTarget)
                 {
                     score += 5.0f;
+                    if (debugTargeting)
+                        Debug.Log($"[NPC {name}] [Global] {enemy.name} bị phạt +5đ do Zone Crowded");
                 }
+            }
+
+            if (debugTargeting)
+            {
+                string tagInfo = enemy.CompareTag("Player") ? "[PLAYER]" : "[NPC]";
+                Debug.Log($"[NPC {name}] [Global] Xét {tagInfo} {enemy.name}: Score = {score:F2} (bestScore hiện tại = {bestScore:F2})");
             }
 
             if (score < bestScore)
@@ -344,17 +400,8 @@ public class NPCCombat : MonoBehaviour
             }
         }
 
-        // Fury
-        if (isFuryMode && playerHealth != null && playerHealth.isAlive && myHealth.IsEnemy(playerHealth.teamCurrent))
-        {
-            float distToPlayer = Vector3.Distance(transform.position, playerObject.transform.position);
-            if (distToPlayer <= currentDetectionRange)
-            {
-                float furyScore = ComputeGlobalScore(playerHealth) - 999f;
-                if (furyScore < bestScore)
-                    best = playerHealth;
-            }
-        }
+        if (debugTargeting)
+            Debug.Log($"<color=magenta>[NPC {name}] => KẾT QUẢ CUỐI CÙNG: Target = {(best != null ? best.name : "NULL")} (bestScore = {bestScore:F2})</color>");
 
         return best;
     }
@@ -383,6 +430,7 @@ public class NPCCombat : MonoBehaviour
         (normDist * weightDistance) -
         (normThreat * weightThreat);
 
+        // Nếu là Player và không bị ignore -> Ưu tiên tuyệt đối (-1.5f)
         if (!ignorePlayerPriority && enemy.CompareTag("Player"))
         {
             score -= 1.5f;
@@ -609,6 +657,13 @@ public class NPCCombat : MonoBehaviour
             anim.enabled = true;
         }
 
+        if (debugTargeting)
+        {
+            float remainingCommit = Mathf.Max(0, commitTimer - Time.time);
+            float remainingCooldown = Mathf.Max(0, (lastSwitchTime + GetEffectiveCooldown()) - Time.time);
+            Debug.Log($"<color=red>[NPC {name}] OnDamaged bởi {(attacker != null ? attacker.name : "NULL")}</color> | DMG: {damage} | Target hiện tại: {(currentTarget != null ? currentTarget.name : "NULL")}");
+        }
+
         if (attacker != null)
         {
             HealthAndTeam attackerHealth = attacker.GetComponent<HealthAndTeam>();
@@ -616,32 +671,52 @@ public class NPCCombat : MonoBehaviour
             {
                 myHealth.AddAttacker(attacker);
 
-                // Nếu đang rảnh rỗi chưa có target (hoặc target cũ đã chết): Phản xạ lập tức quay lại target kẻ đã đánh mình!
-                if (currentTarget == null || currentTargetHealth == null || !currentTargetHealth.isAlive)
+                float dist = Vector3.Distance(transform.position, attacker.transform.position);
+                if (dist > currentChaseRange)
                 {
-                    float dist = Vector3.Distance(transform.position, attacker.transform.position);
-                    // Nới rộng tầm rượt đuổi nếu bị bắn tỉa từ ngoài tầm chase cơ bản
-                    if (dist > currentChaseRange)
-                    {
-                        currentChaseRange = Mathf.Min(dist + 5f, maxDetectionRange);
-                        currentDetectionRange = Mathf.Min(dist + 5f, maxDetectionRange);
-                    }
+                    currentChaseRange = Mathf.Min(dist + 5f, maxDetectionRange);
+                    currentDetectionRange = Mathf.Min(dist + 5f, maxDetectionRange);
+                }
 
+                if (attacker.CompareTag("Player"))
+                {
+                    isFuryMode = true;
+                    furyTimer = furyDuration;
+                    duelTarget = null; // Bị Player đánh -> Bỏ qua duel NPC để dí Player
                     SwitchToTarget(attackerHealth);
                     commitTimer = Time.time + commitLockTime;
                     lastSwitchTime = Time.time;
+                    if (debugTargeting)
+                        Debug.Log($"<color=red>[NPC {name}] BẬT FURY MODE vì bị Player đánh!</color>");
                 }
-            }
+                else
+                {
+                    // A. Nếu đang trong 4s Duel: Tiếp tục solo, KHÔNG reset timer để tránh bị kẹt vĩnh viễn
+                    if (duelTarget != null && duelTarget.isAlive)
+                    {
+                        if (debugTargeting)
+                            Debug.Log($"[NPC {name}] Đang trong 4s Duel với {duelTarget.name} -> Tiếp tục solo (không reset timer).");
+                    }
+                    // B. Nếu đang trong 2s Thả Cửa: MIỄN NHIỄM KIỀM CHÂN, TIẾP TỤC DÍ PLAYER!
+                    else if (Time.time < nextDuelAllowedTime)
+                    {
+                        if (debugTargeting)
+                            Debug.Log($"<color=orange>[NPC {name}] Bị {attackerHealth.name} chém nhưng đang trong 2s THẢ CỬA (còn {(nextDuelAllowedTime - Time.time):F2}s) -> Bỏ qua đệ, kiên quyết lao vào Player!</color>");
+                    }
+                    // C. Hết 2s thả cửa: Bị chém thì mới kích hoạt 4s Duel mới!
+                    else
+                    {
+                        duelTarget = attackerHealth;
+                        duelTimer = duelDuration;
 
-            if (attacker.CompareTag("Player"))
-            {
-                isFuryMode = true;
-                furyTimer = furyDuration;
-            }
-            else
-            {
-                ignorePlayerPriority = true;
-                ignorePlayerPriorityTimer = ignoreDuration;
+                        SwitchToTarget(attackerHealth);
+                        commitTimer = Time.time + commitLockTime;
+                        lastSwitchTime = Time.time;
+
+                        if (debugTargeting)
+                            Debug.Log($"<color=yellow>[NPC {name}] Bị {attackerHealth.name} chém trúng! Bắt đầu DUEL {duelDuration}s với {attackerHealth.name}!</color>");
+                    }
+                }
             }
         }
 

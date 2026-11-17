@@ -7,25 +7,36 @@ public class PlayerHUD : MonoBehaviour
     [Header("Player Health Source")]
     public HealthAndTeam playerHealth;
 
-    [Header("UI Bars")]
+    [Header("UI Bars (Health)")]
     public Image healthFillImage;
-
     public Image healthEaseImage;
 
-    [Header("Text")]
+    [Header("Health Text")]
     public TextMeshProUGUI healthText;
+
+    [Header("Player Panic Source")]
+    public PlayerPanicSystem panicSystem;
+
+    [Header("UI Bars (Panic)")]
+    public Image panicFillImage;
+    public Image panicEaseImage;
+
+    [Header("Panic Text")]
+    public TextMeshProUGUI panicText;
 
     [Header("Animation Settings")]
     public float easeDelay = 0.4f;
-
     public float easeSpeed = 1f;
 
     private float targetFill = 1f;
     private float easeTimer = 0f;
 
+    private float targetPanicFill = 0f;
+    private float panicEaseTimer = 0f;
+
     void Start()
     {
-        // Tự tìm Player nếu chưa kéo thả vào Inspector
+        // 1. Tự tìm Player Health nếu chưa kéo thả vào Inspector
         if (playerHealth == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -41,6 +52,20 @@ public class PlayerHUD : MonoBehaviour
             playerHealth.onDie += HandleDie;
             UpdateHealthUI(true);
         }
+
+        // 2. Tự tìm Player Panic System nếu chưa kéo thả
+        if (panicSystem == null)
+        {
+            panicSystem = PlayerPanicSystem.Instance;
+            if (panicSystem == null)
+                panicSystem = FindObjectOfType<PlayerPanicSystem>();
+        }
+
+        if (panicSystem != null)
+        {
+            panicSystem.onPanicChanged += HandlePanicChanged;
+            UpdatePanicUI(true);
+        }
     }
 
     void OnDestroy()
@@ -50,14 +75,17 @@ public class PlayerHUD : MonoBehaviour
             playerHealth.onDamaged -= HandleDamaged;
             playerHealth.onDie -= HandleDie;
         }
+
+        if (panicSystem != null)
+        {
+            panicSystem.onPanicChanged -= HandlePanicChanged;
+        }
     }
 
     void Update()
     {
-        if (playerHealth == null) return;
-
-        // Hiệu ứng thanh tụt máu chậm phía sau
-        if (healthEaseImage != null)
+        // 1. Hiệu ứng thanh tụt máu chậm phía sau
+        if (playerHealth != null && healthEaseImage != null)
         {
             if (easeTimer > 0f)
             {
@@ -76,6 +104,23 @@ public class PlayerHUD : MonoBehaviour
                 healthEaseImage.fillAmount = targetFill;
             }
         }
+
+        // 2. Hiệu ứng thanh Sợ Hãi mượt
+        if (panicSystem != null && panicEaseImage != null)
+        {
+            if (panicEaseTimer > 0f)
+            {
+                panicEaseTimer -= Time.deltaTime;
+            }
+            else if (Mathf.Abs(panicEaseImage.fillAmount - targetPanicFill) > 0.001f)
+            {
+                panicEaseImage.fillAmount = Mathf.MoveTowards(
+                    panicEaseImage.fillAmount,
+                    targetPanicFill,
+                    easeSpeed * Time.deltaTime
+                );
+            }
+        }
     }
 
     private void HandleDamaged(GameObject attacker, float damage)
@@ -87,6 +132,12 @@ public class PlayerHUD : MonoBehaviour
     private void HandleDie()
     {
         UpdateHealthUI(false);
+    }
+
+    private void HandlePanicChanged(float current, float max)
+    {
+        UpdatePanicUI(false);
+        panicEaseTimer = easeDelay;
     }
 
     public void UpdateHealthUI(bool immediate)
@@ -117,6 +168,33 @@ public class PlayerHUD : MonoBehaviour
                 displayHealth = 1;
             }
             healthText.text = $"Health: {displayHealth} / 100";
+        }
+    }
+
+    public void UpdatePanicUI(bool immediate)
+    {
+        if (panicSystem == null) return;
+
+        float maxCap = Mathf.Max(panicSystem.maxCourageCap, 1f);
+        float current = Mathf.Clamp(panicSystem.currentPanic, 0f, maxCap);
+
+        targetPanicFill = current / maxCap;
+
+        if (panicFillImage != null)
+        {
+            panicFillImage.fillAmount = targetPanicFill;
+        }
+
+        if (panicEaseImage != null && immediate)
+        {
+            panicEaseImage.fillAmount = targetPanicFill;
+        }
+
+        if (panicText != null)
+        {
+            int displayPanic = Mathf.RoundToInt(current);
+            int displayMax = Mathf.RoundToInt(maxCap);
+            panicText.text = $"Panic: {displayPanic} / {displayMax}";
         }
     }
 }
