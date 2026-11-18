@@ -67,14 +67,16 @@ public class CorpseManager : MonoBehaviour
 
     private void FindPlayer()
     {
+        if (PlayerMovement.PlayerTransform != null)
+        {
+            playerTransform = PlayerMovement.PlayerTransform;
+            return;
+        }
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
             playerTransform = player.transform;
-        }
-        else if (Camera.main != null)
-        {
-            playerTransform = Camera.main.transform;
         }
     }
 

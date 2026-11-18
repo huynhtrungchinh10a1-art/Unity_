@@ -10,7 +10,6 @@ public class LoadingTutorialScreen : MonoBehaviour
 
     [Header("UI Panels & CanvasGroup")]
     public GameObject screenPanel;
-
     public CanvasGroup canvasGroup;
 
     [Header("Progress Bar (Thanh Tiến Trình)")]
@@ -20,11 +19,9 @@ public class LoadingTutorialScreen : MonoBehaviour
     [Header("OK / Battle Button")]
     public Button okButton;
     public TextMeshProUGUI okButtonText;
-    public string waitingText = "Đang chuẩn bị chiến trường...";
-    public string readyText = "VÀO TRẬN NGAY (OK)";
 
     [Header("Testing & Simulation")]
-    public bool autoSimulateLoading = true;
+    public bool autoSimulateLoading = true; 
     public float simulatedDuration = 2.5f;
 
     [Header("Fade Out Settings")]
@@ -55,19 +52,16 @@ public class LoadingTutorialScreen : MonoBehaviour
             canvasGroup.blocksRaycasts = true;
         }
 
-        // Ban đầu vô hiệu hóa nút OK, hiển thị trạng thái chờ
+        // [ĐÃ SỬA] Ban đầu ẨN HOÀN TOÀN nút OK, chờ đến khi load xong mới hiện
         if (okButton != null)
         {
-            okButton.interactable = false;
+            okButton.gameObject.SetActive(false); 
+            okButton.interactable = true; // Đảm bảo nút ở trạng thái có thể bấm được khi hiện ra
+
             if (okButton.onClick.GetPersistentEventCount() == 0)
             {
                 okButton.onClick.AddListener(OnOKButtonClicked);
             }
-        }
-
-        if (okButtonText != null)
-        {
-            okButtonText.text = waitingText;
         }
 
         if (progressBar != null)
@@ -100,7 +94,7 @@ public class LoadingTutorialScreen : MonoBehaviour
 
     public void SetProgress(float progress, string customMessage = "")
     {
-        // Khi Spawner thực tế nạp thì dừng tiến trình giả lập
+        // Khi Spawner thực tế nạp thì dừng tiến trình giả lập (nếu đang chạy)
         if (simulationCoroutine != null)
         {
             StopCoroutine(simulationCoroutine);
@@ -143,19 +137,10 @@ public class LoadingTutorialScreen : MonoBehaviour
 
         if (progressBar != null) progressBar.value = 1f;
 
-        if (progressText != null)
-        {
-            progressText.text = "Chiến trường đã sẵn sàng!";
-        }
-
+        // [ĐÃ SỬA] Hiển thị lại nút OK khi tiến trình tải đạt 100%
         if (okButton != null)
         {
-            okButton.interactable = true;
-        }
-
-        if (okButtonText != null)
-        {
-            okButtonText.text = readyText;
+            okButton.gameObject.SetActive(true); 
         }
     }
 

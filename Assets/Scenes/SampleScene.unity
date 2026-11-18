@@ -7182,7 +7182,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.031446517, g: 0.03114985, b: 0.03114985, a: 1}
+  m_Color: {r: 0.03137255, g: 0.03137255, b: 0.03137255, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7225,8 +7225,6 @@ MonoBehaviour:
   progressText: {fileID: 2035160612}
   okButton: {fileID: 1103631012}
   okButtonText: {fileID: 1647966976}
-  waitingText: "\u0110ang chu\u1EA9n b\u1ECB chi\u1EBFn tr\u01B0\u1EDDng..."
-  readyText: "\u0110\xE3 Hi\u1EC3u"
   autoSimulateLoading: 1
   simulatedDuration: 2.5
   fadeOutSpeed: 2.5
@@ -9241,9 +9239,9 @@ MonoBehaviour:
   snapToGround: 1
   raycastStartHeight: 60
   groundOffset: 0.05
-  spawnOnStart: 1
+  spawnOnStart: 0
   spawnInBatches: 1
-  spawnsPerFrame: 250
+  spawnsPerFrame: 500
   syncWithLoadingScreen: 1
   currentSpawnedCount: 0
   isSpawning: 0
@@ -14461,7 +14459,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1019213748
 Transform:
   m_ObjectHideFlags: 0
@@ -20750,7 +20748,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1210744754
 Transform:
   m_ObjectHideFlags: 0
@@ -34002,8 +34000,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.0011559, y: -0.0037766}
-  m_SizeDelta: {x: 1826.6, y: 1135.2}
+  m_AnchoredPosition: {x: -0.0059662, y: -13.793}
+  m_SizeDelta: {x: 1920, y: 1107.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1855734627
 MonoBehaviour:
@@ -34589,7 +34587,7 @@ PrefabInstance:
     - target: {fileID: 8039068903539534601, guid: e794039381c05e24cb2508de68d6e2cf,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8578329933304331076, guid: e794039381c05e24cb2508de68d6e2cf,
         type: 3}
@@ -34897,7 +34895,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2035160611
 RectTransform:
   m_ObjectHideFlags: 0

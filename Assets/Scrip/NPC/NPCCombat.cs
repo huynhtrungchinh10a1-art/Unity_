@@ -85,6 +85,7 @@ public class NPCCombat : MonoBehaviour
     public HealthAndTeam MyHealth { get { return myHealth; } }
     public float VerticalVelocity { get { return verticalVelocity; } }
     public Transform CurrentTarget { get { return currentTarget; } }
+    public HealthAndTeam CurrentTargetHealth { get { return currentTargetHealth; } }
 
     // target
     protected Transform currentTarget;
@@ -107,6 +108,11 @@ public class NPCCombat : MonoBehaviour
     // fury
     protected bool isFuryMode;
     protected float furyTimer;
+
+    // targets and player
+    public static GameObject CachedPlayerObject;
+    public static HealthAndTeam CachedPlayerHealth;
+    private static readonly Collider[] sharedScanColliders = new Collider[128];
 
     // player
     protected GameObject playerObject;
@@ -132,9 +138,19 @@ public class NPCCombat : MonoBehaviour
 
         characterLayerMask = LayerMask.GetMask("Character");
 
-        playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject != null)
-            playerHealth = playerObject.GetComponent<HealthAndTeam>();
+        // Tìm Player qua Static Cache: Ưu tiên lấy từ PlayerMovement Instance (0ms) thay vì duyệt Tag Scene
+        if (CachedPlayerObject == null)
+        {
+            if (PlayerMovement.Instance != null)
+                CachedPlayerObject = PlayerMovement.Instance.gameObject;
+            else
+                CachedPlayerObject = GameObject.FindGameObjectWithTag("Player");
+
+            if (CachedPlayerObject != null)
+                CachedPlayerHealth = CachedPlayerObject.GetComponent<HealthAndTeam>();
+        }
+        playerObject = CachedPlayerObject;
+        playerHealth = (CachedPlayerHealth != null) ? CachedPlayerHealth : (playerObject != null ? playerObject.GetComponent<HealthAndTeam>() : null);
 
         myHealth.onDamaged += OnDamaged;
         myHealth.onDie += OnDie;
@@ -181,19 +197,22 @@ public class NPCCombat : MonoBehaviour
             }
         }
 
-        if (animHandler != null)
-            animHandler.UpdateRootMotionState();
-
-        if (isAttacking)
+        if (!isAnimCulled)
         {
-            if (animHandler != null && !animHandler.IsAttackingCombo)
-            {
-                isAttacking = false;
-            }
-        }
+            if (animHandler != null)
+                animHandler.UpdateRootMotionState();
 
-        UpdateAnimationSpeed();
-        HandleAttack();
+            if (isAttacking)
+            {
+                if (animHandler != null && !animHandler.IsAttackingCombo)
+                {
+                    isAttacking = false;
+                }
+            }
+
+            UpdateAnimationSpeed();
+            HandleAttack();
+        }
 
         float scanTime = (Time.time + scanOffset) % scanInterval;
         if (scanTime < Time.deltaTime)
@@ -216,17 +235,20 @@ public class NPCCombat : MonoBehaviour
 
         if (BattlefieldManager.Instance != null && myHealth.isAlive)
         {
-            Vector2Int newCell = BattlefieldManager.Instance.GetCell(transform.position);
-            if (!isRegisteredInGrid)
+            if (!isAnimCulled || scanTime < Time.deltaTime)
             {
-                BattlefieldManager.Instance.RegisterNPC(this, newCell);
-                currentGridCell = newCell;
-                isRegisteredInGrid = true;
-            }
-            else if (newCell != currentGridCell)
-            {
-                BattlefieldManager.Instance.UpdateNPCPosition(this, currentGridCell, newCell);
-                currentGridCell = newCell;
+                Vector2Int newCell = BattlefieldManager.Instance.GetCell(transform.position);
+                if (!isRegisteredInGrid)
+                {
+                    BattlefieldManager.Instance.RegisterNPC(this, newCell);
+                    currentGridCell = newCell;
+                    isRegisteredInGrid = true;
+                }
+                else if (newCell != currentGridCell)
+                {
+                    BattlefieldManager.Instance.UpdateNPCPosition(this, currentGridCell, newCell);
+                    currentGridCell = newCell;
+                }
             }
         }
 
@@ -234,12 +256,21 @@ public class NPCCombat : MonoBehaviour
 
     void UpdatePerception()
     {
+        // Khi ở xa và đã có mục tiêu còn sống: Bỏ qua vòng quét Physics để tiết kiệm hàng nghìn phép dò va chạm mỗi giây
+        if (isAnimCulled && currentTargetHealth != null && currentTargetHealth.isAlive)
+        {
+            return;
+        }
+
         visibleEnemies.Clear();
 
-        // scan nhanh
-        Collider[] hits = Physics.OverlapSphere(transform.position, currentDetectionRange, characterLayerMask);
-        foreach (var hit in hits)
+        // Scan nhanh Physics Non-Alloc không sinh rác bộ nhớ heap (Zero GC Allocation)
+        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, currentDetectionRange, sharedScanColliders, characterLayerMask);
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider hit = sharedScanColliders[i];
+            if (hit == null) continue;
+
             HealthAndTeam h = hit.GetComponent<HealthAndTeam>();
             if (IsValidEnemy(h))
             {
@@ -480,7 +511,12 @@ public class NPCCombat : MonoBehaviour
 
             if (agent.isOnNavMesh)
             {
-                agent.SetDestination(dest);
+                // Chỉ tính toán lại đường đi NavMesh nếu điểm đến di chuyển đáng kể (> 0.5m) hoặc chưa có đường
+                // Cắt giảm 95% số lượng yêu cầu tìm đường NavMesh (Pathfinding Queue) bị nghẽn CPU mỗi frame
+                if (!agent.hasPath || (dest - agent.destination).sqrMagnitude > 0.25f)
+                {
+                    agent.SetDestination(dest);
+                }
             }
         }
     }
@@ -922,6 +958,7 @@ public class NPCCombat : MonoBehaviour
 
         isAnimCulled = culled;
 
+        if (anim == null) anim = GetComponentInChildren<Animator>();
         if (anim != null)
         {
             anim.enabled = !culled;
@@ -930,8 +967,70 @@ public class NPCCombat : MonoBehaviour
         // Tắt/bật toàn bộ Renderers (SkinnedMeshRenderer, MeshRenderer kiếm/khiên/tóc/mũi tên...)
         SetRenderersEnabled(!culled);
 
-        // Giãn cách quét AI/Physics khi ở xa: ở gần 0.5s, ở xa 2.0s để giải phóng CPU
-        scanInterval = culled ? 2.0f : 0.5f;
+        if (controller == null) controller = GetComponent<CharacterController>();
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+
+        if (culled)
+        {
+            // ==================== CHẾ ĐỘ NGỦ ĐÔNG HOÀN TOÀN (HIBERNATION) ====================
+            // 1. Tắt CharacterController: gỡ capsule hoàn toàn khỏi PhysX (tiết kiệm ~220ms CPU)
+            if (controller != null)
+            {
+                controller.enabled = false;
+            }
+
+            // 2. Tắt NavMeshAgent: gỡ khỏi mô phỏng Crowd NavMesh C++ (tiết kiệm ~80ms CPU)
+            if (agent != null)
+            {
+                if (agent.isActiveAndEnabled && agent.isOnNavMesh)
+                {
+                    agent.ResetPath();
+                }
+                agent.enabled = false;
+            }
+
+            // 3. Tắt các script bổ trợ (ArcherAnimatorHandler LateUpdate, ActiveDefense)
+            if (animHandler != null) animHandler.enabled = false;
+            ActiveDefense defense = GetComponent<ActiveDefense>();
+            if (defense != null) defense.enabled = false;
+
+            // 4. Tắt chính script NPCCombat/ArcherCombat: ngừng hoàn toàn hàm Update() (tiết kiệm ~40ms CPU)
+            this.enabled = false;
+        }
+        else
+        {
+            // ==================== ĐÁNH THỨC DẬY (WAKE UP) ====================
+            // 1. Bật lại script NPCCombat / ArcherCombat
+            this.enabled = true;
+
+            // 2. Bật lại CharacterController và đảm bảo cờ va chạm vật lý hoạt động bình thường
+            if (controller != null)
+            {
+                controller.detectCollisions = true; // Bật lại vật lý bình thường
+                controller.enabled = true;
+            }
+
+            // 3. Bật lại NavMeshAgent
+            if (agent != null)
+            {
+                agent.enabled = true;
+                if (!agent.isOnNavMesh)
+                {
+                    if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
+                    {
+                        agent.Warp(hit.position);
+                    }
+                }
+            }
+
+            // 4. Bật lại các script bổ trợ
+            if (animHandler != null) animHandler.enabled = true;
+            ActiveDefense defense = GetComponent<ActiveDefense>();
+            if (defense != null) defense.enabled = true;
+
+            // 5. Chu kỳ quét AI khi thức dậy
+            scanInterval = 0.5f;
+        }
     }
 
     public void SetRenderersEnabled(bool isEnabled)

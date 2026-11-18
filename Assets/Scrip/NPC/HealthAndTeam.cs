@@ -36,9 +36,20 @@ public class HealthAndTeam : MonoBehaviour
         defense = GetComponent<ActiveDefense>();
     }
 
+    private float threatDecayTimer = 0f;
+    private static readonly List<GameObject> reusableThreatKeys = new List<GameObject>(32);
+
     void Update()
     {
-        DecayThreats();
+        if (threatMap.Count > 0)
+        {
+            threatDecayTimer -= Time.deltaTime;
+            if (threatDecayTimer <= 0f)
+            {
+                threatDecayTimer = 1.0f;
+                DecayThreats(1.0f);
+            }
+        }
     }
     public void ChangeTeam(Team newTeam)
     {
@@ -153,15 +164,21 @@ public class HealthAndTeam : MonoBehaviour
         return 0f;
     }
 
-    void DecayThreats()
+    void DecayThreats(float elapsed)
     {
         if (threatMap.Count == 0) return;
 
-        var keys = new List<GameObject>(threatMap.Keys);
-        foreach (var key in keys)
+        reusableThreatKeys.Clear();
+        foreach (var kvp in threatMap)
         {
+            reusableThreatKeys.Add(kvp.Key);
+        }
+
+        for (int i = 0; i < reusableThreatKeys.Count; i++)
+        {
+            GameObject key = reusableThreatKeys[i];
             if (key == null) { threatMap.Remove(key); continue; }
-            threatMap[key] -= threatDecayRate * Time.deltaTime;
+            threatMap[key] -= threatDecayRate * elapsed;
             if (threatMap[key] <= 0f)
                 threatMap.Remove(key);
         }

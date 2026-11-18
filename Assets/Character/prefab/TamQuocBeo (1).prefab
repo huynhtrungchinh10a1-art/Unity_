@@ -1004,10 +1004,14 @@ MonoBehaviour:
   switchTargetCooldown: 2
   outnumberedCooldownMultiplier: 0.5
   commitLockTime: 1.2
+  duelDuration: 4
+  duelCooldown: 2
+  debugTargeting: 0
   maxAttackersPerTarget: 3
   maxTotalAttackersPerTarget: 5
   enableDistanceAnimCulling: 1
   animCullDistance: 45
+  cullingIndex: -1
   weightAttackerCount: 0.75
   weightDistance: 0.25
   hysteresisBonus: 0.15
@@ -1026,6 +1030,7 @@ MonoBehaviour:
   attackCooldownTimer: 0
   separationDistance: 2.5
   separationForce: 5
+  equippedWeapons: []
   ignoreDuration: 3
   rollCooldown: 5
 --- !u!114 &3472839125550949783

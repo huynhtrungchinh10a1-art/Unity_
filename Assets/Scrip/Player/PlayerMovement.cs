@@ -31,6 +31,19 @@ public class PlayerMovement : MonoBehaviour
     private float lastTurnTime = -10f;
     private bool isDead = false;
 
+    public static PlayerMovement Instance { get; private set; }
+    public static Transform PlayerTransform { get; private set; }
+
+    void Awake()
+    {
+        Instance = this;
+        PlayerTransform = transform;
+        if (!CompareTag("Player"))
+        {
+            gameObject.tag = "Player";
+        }
+    }
+
     void Start()
     {
         controller = GetComponent<CharacterController>();

@@ -27,9 +27,9 @@ public class NPCCullingManager : MonoBehaviour
     public Transform playerTransform;
 
     [Header("Performance")]
-    public int checksPerFrame = 2500;
+    public int checksPerFrame = 5000;
 
-    private List<NPCCombat> npcs = new List<NPCCombat>(2048);
+    private List<NPCCombat> npcs = new List<NPCCombat>(10240);
     private int currentIndex = 0;
 
     public int TotalRegisteredNPCs => npcs.Count;
@@ -47,6 +47,8 @@ public class NPCCullingManager : MonoBehaviour
         FindPlayer();
     }
 
+    private float retryFindPlayerTimer = 0f;
+
     void Start()
     {
         if (playerTransform == null) FindPlayer();
@@ -54,14 +56,23 @@ public class NPCCullingManager : MonoBehaviour
 
     private void FindPlayer()
     {
+        if (PlayerMovement.PlayerTransform != null)
+        {
+            playerTransform = PlayerMovement.PlayerTransform;
+            return;
+        }
+
+        PlayerMovement pm = FindObjectOfType<PlayerMovement>();
+        if (pm != null)
+        {
+            playerTransform = pm.transform;
+            return;
+        }
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
             playerTransform = player.transform;
-        }
-        else if (Camera.main != null)
-        {
-            playerTransform = Camera.main.transform;
         }
     }
 
@@ -71,6 +82,19 @@ public class NPCCullingManager : MonoBehaviour
 
         npc.cullingIndex = npcs.Count;
         npcs.Add(npc);
+
+        // Khởi tạo trạng thái ban đầu: nếu ở xa Player > cullDistance thì cho ngủ đông ngay lập tức khi vừa spawn!
+        if (playerTransform != null)
+        {
+            Vector3 p = playerTransform.position;
+            Vector3 n = npc.transform.position;
+            float dx = n.x - p.x;
+            float dz = n.z - p.z;
+            if ((dx * dx + dz * dz) > (cullDistance * cullDistance))
+            {
+                npc.SetCulled(true);
+            }
+        }
     }
 
     public void UnregisterNPC(NPCCombat npc)
@@ -106,7 +130,12 @@ public class NPCCullingManager : MonoBehaviour
 
         if (playerTransform == null)
         {
-            FindPlayer();
+            retryFindPlayerTimer -= Time.deltaTime;
+            if (retryFindPlayerTimer <= 0f)
+            {
+                retryFindPlayerTimer = 1.0f;
+                FindPlayer();
+            }
             if (playerTransform == null) return;
         }
 

@@ -306,18 +306,21 @@ public class ArcherCombat : NPCCombat
         dirToTarget.y = 0;
 
         // Kiểm tra xem có bất kỳ kẻ thù nào đang ở cự ly cận chiến nguy hiểm (< kiteRange) không
-        float nearestEnemyDist;
-        HealthAndTeam nearestEnemy = GetNearestThreatEnemy(out nearestEnemyDist);
-
-        if (nearestEnemy != null && nearestEnemyDist < kiteRange)
+        if (!IsCulled)
         {
-            // Nếu có kẻ địch nguy hiểm áp sát và target hiện tại đang ở xa: Chuyển mục tiêu sang kẻ áp sát để tập trung ứng phó
-            if (nearestEnemy != currentTargetHealth && dist > kiteRange)
+            float nearestEnemyDist;
+            HealthAndTeam nearestEnemy = GetNearestThreatEnemy(out nearestEnemyDist);
+
+            if (nearestEnemy != null && nearestEnemyDist < kiteRange)
             {
-                SwitchToTarget(nearestEnemy);
-                dist = nearestEnemyDist;
-                dirToTarget = (CurrentTarget.position - transform.position);
-                dirToTarget.y = 0;
+                // Nếu có kẻ địch nguy hiểm áp sát và target hiện tại đang ở xa: Chuyển mục tiêu sang kẻ áp sát để tập trung ứng phó
+                if (nearestEnemy != currentTargetHealth && dist > kiteRange)
+                {
+                    SwitchToTarget(nearestEnemy);
+                    dist = nearestEnemyDist;
+                    dirToTarget = (CurrentTarget.position - transform.position);
+                    dirToTarget.y = 0;
+                }
             }
         }
         float angleToTarget = (dirToTarget != Vector3.zero) ? Vector3.Angle(transform.forward, dirToTarget.normalized) : 0f;
@@ -596,18 +599,21 @@ public class ArcherCombat : NPCCombat
         dirToTarget.y = 0;
 
         // Kiểm tra xem có bất kỳ kẻ thù nào đang ở cự ly cận chiến nguy hiểm (< kiteRange) không
-        float nearestEnemyDist;
-        HealthAndTeam nearestEnemy = GetNearestThreatEnemy(out nearestEnemyDist);
-
-        if (nearestEnemy != null && nearestEnemyDist < kiteRange)
+        if (!IsCulled)
         {
-            // Nếu có kẻ địch nguy hiểm áp sát và target hiện tại đang ở xa: Chuyển mục tiêu sang kẻ áp sát để tập trung ứng phó
-            if (nearestEnemy != currentTargetHealth && dist > kiteRange)
+            float nearestEnemyDist;
+            HealthAndTeam nearestEnemy = GetNearestThreatEnemy(out nearestEnemyDist);
+
+            if (nearestEnemy != null && nearestEnemyDist < kiteRange)
             {
-                SwitchToTarget(nearestEnemy);
-                dist = nearestEnemyDist;
-                dirToTarget = (CurrentTarget.position - transform.position);
-                dirToTarget.y = 0;
+                // Nếu có kẻ địch nguy hiểm áp sát và target hiện tại đang ở xa: Chuyển mục tiêu sang kẻ áp sát để tập trung ứng phó
+                if (nearestEnemy != currentTargetHealth && dist > kiteRange)
+                {
+                    SwitchToTarget(nearestEnemy);
+                    dist = nearestEnemyDist;
+                    dirToTarget = (CurrentTarget.position - transform.position);
+                    dirToTarget.y = 0;
+                }
             }
         }
 
