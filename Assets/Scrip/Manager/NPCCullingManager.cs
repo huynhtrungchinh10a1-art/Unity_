@@ -29,11 +29,15 @@ public class NPCCullingManager : MonoBehaviour
     [Header("Performance")]
     public int checksPerFrame = 5000;
 
+    [Header("Debug & Cinematic")]
+    public bool disableCulling = false;
+
     private List<NPCCombat> npcs = new List<NPCCombat>(10240);
     private int currentIndex = 0;
 
     public int TotalRegisteredNPCs => npcs.Count;
     public int CulledCount { get; private set; }
+    public List<NPCCombat> AllNPCs => npcs;
 
     void Awake()
     {
@@ -84,7 +88,8 @@ public class NPCCullingManager : MonoBehaviour
         npcs.Add(npc);
 
         // Khởi tạo trạng thái ban đầu: nếu ở xa Player > cullDistance thì cho ngủ đông ngay lập tức khi vừa spawn!
-        if (playerTransform != null)
+        // (Nếu disableCulling = true thì không cho ngủ đông)
+        if (!disableCulling && playerTransform != null)
         {
             Vector3 p = playerTransform.position;
             Vector3 n = npc.transform.position;
@@ -127,6 +132,24 @@ public class NPCCullingManager : MonoBehaviour
     {
         int count = npcs.Count;
         if (count == 0) return;
+
+        // Nếu bật chế độ tắt culling (dùng để quay clip): Đảm bảo toàn bộ NPC được thức dậy hiển thị
+        if (disableCulling)
+        {
+            int checksToWake = Mathf.Min(checksPerFrame, count);
+            for (int i = 0; i < checksToWake; i++)
+            {
+                if (currentIndex >= npcs.Count) currentIndex = 0;
+                NPCCombat npc = npcs[currentIndex];
+                if (npc != null && npc.IsCulled)
+                {
+                    npc.SetCulled(false);
+                }
+                currentIndex++;
+            }
+            CulledCount = 0;
+            return;
+        }
 
         if (playerTransform == null)
         {

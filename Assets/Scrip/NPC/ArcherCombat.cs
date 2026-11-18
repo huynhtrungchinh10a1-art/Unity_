@@ -94,6 +94,11 @@ public class ArcherCombat : NPCCombat
 
     protected override void Update()
     {
+        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode)
+        {
+            return;
+        }
+
         if (meleeCooldownTimer > 0)
             meleeCooldownTimer -= Time.deltaTime;
 

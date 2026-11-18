@@ -126,6 +126,7 @@ public class NPCAnimatorHandler : MonoBehaviour
     void OnAnimatorMove()
     {
         if (anim == null || !anim.applyRootMotion) return;
+        if (controller == null || !controller.enabled) return;
 
         Vector3 delta = anim.deltaPosition;
         delta.y += combat.VerticalVelocity * Time.deltaTime;

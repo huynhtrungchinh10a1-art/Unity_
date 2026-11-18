@@ -150,4 +150,12 @@ public class GroundArrowManager : MonoBehaviour
             );
         }
     }
+
+    [ContextMenu("Xóa Toàn Bộ Tên Cắm Đất")]
+    public void ClearAllGroundedArrows()
+    {
+        batches.Clear();
+        currentBatch.Clear();
+        TotalGroundedArrows = 0;
+    }
 }

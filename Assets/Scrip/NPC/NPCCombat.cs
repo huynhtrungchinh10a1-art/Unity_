@@ -128,13 +128,23 @@ public class NPCCombat : MonoBehaviour
     // random
     private float scanOffset;
 
-    protected virtual void Start()
+    protected virtual void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         controller = GetComponent<CharacterController>();
         myHealth = GetComponent<HealthAndTeam>();
         animHandler = GetComponent<NPCAnimatorHandler>();
         anim = GetComponentInChildren<Animator>();
+        characterLayerMask = LayerMask.GetMask("Character");
+    }
+
+    protected virtual void Start()
+    {
+        if (agent == null) agent = GetComponent<NavMeshAgent>();
+        if (controller == null) controller = GetComponent<CharacterController>();
+        if (myHealth == null) myHealth = GetComponent<HealthAndTeam>();
+        if (animHandler == null) animHandler = GetComponent<NPCAnimatorHandler>();
+        if (anim == null) anim = GetComponentInChildren<Animator>();
 
         characterLayerMask = LayerMask.GetMask("Character");
 
@@ -183,6 +193,12 @@ public class NPCCombat : MonoBehaviour
 
     protected virtual void Update()
     {
+        // Khi bật chế độ đạo diễn quay phim: Không để AI tự ý di chuyển hoặc đánh
+        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode)
+        {
+            return;
+        }
+
         HandleFury();
 
         if (duelTarget != null)
@@ -1003,18 +1019,20 @@ public class NPCCombat : MonoBehaviour
             // 1. Bật lại script NPCCombat / ArcherCombat
             this.enabled = true;
 
-            // 2. Bật lại CharacterController và đảm bảo cờ va chạm vật lý hoạt động bình thường
+            bool isDirectorMode = (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode);
+
+            // 2. Bật lại CharacterController (chỉ khi không ở chế độ đạo diễn để tránh va chạm vật lý chen chúc)
             if (controller != null)
             {
-                controller.detectCollisions = true; // Bật lại vật lý bình thường
-                controller.enabled = true;
+                controller.detectCollisions = !isDirectorMode;
+                controller.enabled = !isDirectorMode;
             }
 
-            // 3. Bật lại NavMeshAgent
+            // 3. Bật lại NavMeshAgent (chỉ khi không ở chế độ đạo diễn)
             if (agent != null)
             {
-                agent.enabled = true;
-                if (!agent.isOnNavMesh)
+                agent.enabled = !isDirectorMode;
+                if (!isDirectorMode && !agent.isOnNavMesh)
                 {
                     if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
                     {
@@ -1026,7 +1044,7 @@ public class NPCCombat : MonoBehaviour
             // 4. Bật lại các script bổ trợ
             if (animHandler != null) animHandler.enabled = true;
             ActiveDefense defense = GetComponent<ActiveDefense>();
-            if (defense != null) defense.enabled = true;
+            if (defense != null && !isDirectorMode) defense.enabled = true;
 
             // 5. Chu kỳ quét AI khi thức dậy
             scanInterval = 0.5f;
