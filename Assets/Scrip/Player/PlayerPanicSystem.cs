@@ -18,24 +18,20 @@ public class PlayerPanicSystem : MonoBehaviour
 
     [Header("Zone Settings (2 Vòng trực quan)")]
     public float outerZoneRadius = 18f;
-
-    public float dangerZoneRadius = 3.5f;
-
+    public float dangerZoneRadius = 4.5f;
+    public float closeAllyRadius = 5.5f;
     public float scanInterval = 0.2f;
-
     public LayerMask characterLayerMask;
 
     [Header("Panic Gain Rates (Khi bị đe dọa)")]
-    public float panicRatePerOuterEnemy = 1.0f;
-
-    public float dangerZoneMultiplier = 3.5f;
+    public float panicRatePerOuterEnemy = 0f;
+    public float panicRatePerInnerEnemy = 3.0f;
+    public float maxPanicGainRate = 12.0f;
 
     [Header("Panic Recovery Rates (Cơ chế Hồi Phục Sợ Hãi)")]
-    public float calmDownRate = 4.0f;
-
-    public float allyReliefPerPerson = 1.2f;
-
-    public float maxAllyCalmRate = 6.0f;
+    public float calmDownRate = 5.0f;
+    public float allyReliefPerPerson = 1.0f;
+    public float maxAllyCalmRate = 8.0f;
 
     [Header("Visual Witness Death (Tận mắt thấy đồng đội chết)")]
     public Camera playerCamera;
@@ -52,6 +48,13 @@ public class PlayerPanicSystem : MonoBehaviour
     [Range(0f, 1f)] public float minBreathingVolRatio = 0.12f;
 
     [Range(0f, 1f)] public float heartbeatVolume = 1.0f;
+
+    [Header("Audio Boost (Khuếch đại âm lượng x2, x3 - Chống rè & Lệch)")]
+    [Range(1f, 4f)]
+    public float breathingBoost = 2.0f;
+
+    [Range(1f, 4f)]
+    public float heartbeatBoost = 2.0f;
 
     public float audioFadeSpeed = 4.0f;
 
@@ -101,7 +104,8 @@ public class PlayerPanicSystem : MonoBehaviour
     [SerializeField] private string debugStateDescription = "Bình thường";
     [SerializeField] private int debugOuterEnemies = 0;
     [SerializeField] private int debugInnerEnemies = 0;
-    [SerializeField] private int debugAlliesNearby = 0;
+    [SerializeField] private int debugAlliesNearby = 0; // Tổng đồng đội trong 18m (dùng cho Battle Ambience)
+    [SerializeField] private int debugCloseAllies = 0;   // Đồng đội sát cánh trong closeAllyRadius (dùng cho che chở)
     [SerializeField] private int debugTrackedAlliesCount = 0;
     [SerializeField] private float debugCurrentPanicRate = 0f;
     [SerializeField] private float debugBattleVolume = 0f;
@@ -112,8 +116,8 @@ public class PlayerPanicSystem : MonoBehaviour
     private CharacterController controller;
     private float scanTimer = 0f;
 
-    // Buffer cố định cho OverlapSphereNonAlloc (Zero GC Alloc)
-    private readonly Collider[] scanCollidersBuffer = new Collider[64];
+    // Buffer cố định cho OverlapSphereNonAlloc (256 chỗ để không bị tràn khi nghìn quân hỗn chiến)
+    private readonly Collider[] scanCollidersBuffer = new Collider[256];
 
     // Quản lý đăng ký onDie cho đồng đội trong vòng chiến trường 18m
     private readonly Dictionary<HealthAndTeam, System.Action> trackedAllies = new Dictionary<HealthAndTeam, System.Action>();
@@ -123,6 +127,7 @@ public class PlayerPanicSystem : MonoBehaviour
 
     public System.Action<float, float> onPanicChanged;
     public float PanicNormalized => Mathf.Clamp01(currentPanic / Mathf.Max(maxCourageCap, 1f));
+    private float lastReportedPanic = -1f;
 
     void Awake()
     {
@@ -195,6 +200,7 @@ public class PlayerPanicSystem : MonoBehaviour
         debugOuterEnemies = 0;
         debugInnerEnemies = 0;
         debugAlliesNearby = 0;
+        debugCloseAllies = 0;
 
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, outerZoneRadius, scanCollidersBuffer, characterLayerMask);
         currentScanAllies.Clear();
@@ -227,7 +233,13 @@ public class PlayerPanicSystem : MonoBehaviour
             {
                 if (currentScanAllies.Add(h))
                 {
-                    debugAlliesNearby++;
+                    debugAlliesNearby++; // Dùng cho Battle Ambience Audio 18m
+
+                    float distance = Vector3.Distance(myPos, h.transform.position);
+                    if (distance <= closeAllyRadius)
+                    {
+                        debugCloseAllies++; // Chỉ đồng đội sát cánh mới hỗ trợ giảm sợ hãi
+                    }
 
                     // Đăng ký onDie ngay khi đồng đội bước vào vòng 18m (nếu chưa theo dõi)
                     if (!trackedAllies.ContainsKey(h))
@@ -331,68 +343,70 @@ public class PlayerPanicSystem : MonoBehaviour
     private void UpdatePanicLevel()
     {
         float previousPanic = currentPanic;
-        int totalEnemies = debugOuterEnemies + debugInnerEnemies;
 
-        // TRƯỜNG HỢP 1: RA XA GIAO TRANH (Hoàn toàn không có địch trong vòng 18m)
-        if (totalEnemies == 0)
+        if (freezePanic)
         {
-            if (freezePanic)
-            {
-                debugCurrentPanicRate = 0f;
-                debugStateDescription = "Đang KHÓA sợ hãi (Freeze - Không tự tụt)";
-            }
-            else
-            {
-                // Tự hồi phục tự nhiên, nếu có đồng đội bên cạnh thì bình tĩnh nhanh hơn nữa
-                float recoveryRate = calmDownRate + (debugAlliesNearby * 0.4f);
-                debugCurrentPanicRate = -recoveryRate;
-                currentPanic -= recoveryRate * Time.deltaTime;
-                debugStateDescription = $"An toàn ra xa giao tranh (Giảm -{recoveryRate:F1}/s)";
-            }
+            debugCurrentPanicRate = 0f;
+            debugStateDescription = "Đang KHÓA sợ hãi (Freeze - Không tự tụt)";
+            return;
         }
-        // TRƯỜNG HỢP 2: ĐANG Ở TRONG GIAO TRANH
-        else
+
+        // TÌNH HUỐNG 1: CÓ KẺ ĐỊCH ÁP SÁT CẬN CHIẾN (Trong vòng nguy hiểm) HOẶC ĐỊCH TẦM XA GÂY ÁP LỰC
+        float rawEnemyPressure = (debugInnerEnemies * panicRatePerInnerEnemy) +
+                                 (debugOuterEnemies * panicRatePerOuterEnemy);
+
+        if (debugInnerEnemies > 0 || rawEnemyPressure > 0.01f)
         {
-            // Tính toán áp lực từ quân địch
-            float enemyPressure = (debugOuterEnemies * panicRatePerOuterEnemy) +
-                                  (debugInnerEnemies * panicRatePerOuterEnemy * dangerZoneMultiplier);
+            // Đồng đội che chở: CHỈ TÍNH ĐỒNG ĐỘI SÁT CÁNH (trong closeAllyRadius)
+            float allyProtection = debugCloseAllies * allyReliefPerPerson;
+            float netPressure = rawEnemyPressure - allyProtection;
 
-            // Tính toán sự che chở, bảo bọc từ đồng đội
-            float allyProtection = debugAlliesNearby * allyReliefPerPerson;
-
-            // Áp lực ròng (Net Pressure) = Đe dọa của địch - Bảo vệ của đồng đội
-            float netPressure = enemyPressure - allyProtection;
-
-            // Nếu áp lực địch lớn hơn -> TĂNG SỢ HÃI
             if (netPressure > 0f)
             {
-                debugCurrentPanicRate = netPressure;
-                currentPanic += netPressure * Time.deltaTime;
-                debugStateDescription = $"Đang hoảng loạn (Tăng +{netPressure:F1}/s)";
+                // KHỐA TRẦN TỐC ĐỘ TĂNG: Chống hiện tượng "tăng phi mã" khi bị nhiều địch vây
+                float gainRate = Mathf.Min(netPressure, maxPanicGainRate);
+                debugCurrentPanicRate = gainRate;
+                currentPanic += gainRate * Time.deltaTime;
+                debugStateDescription = $"Đang bị áp sát ({debugInnerEnemies} địch) (Tăng +{gainRate:F1}/s)";
             }
-            // Nếu đồng đội đông hơn che chắn (Lùi về hàng ngũ quân mình) -> GIẢM SỢ HÃI (HỒI PHỤC)!
             else
             {
-                if (freezePanic)
-                {
-                    debugCurrentPanicRate = 0f;
-                    debugStateDescription = "Đang KHÓA sợ hãi (Freeze - Không tự tụt)";
-                }
-                else
-                {
-                    // Tốc độ hồi phục tỉ lệ thuận với độ áp đảo của đồng đội, tối đa maxAllyCalmRate
-                    float allyCalmRate = Mathf.Min(Mathf.Abs(netPressure), maxAllyCalmRate);
-                    debugCurrentPanicRate = -allyCalmRate;
-                    currentPanic -= allyCalmRate * Time.deltaTime;
-                    debugStateDescription = $"Được đồng đội bảo bọc (Giảm -{allyCalmRate:F1}/s)";
-                }
+                // Có đồng đội đứng sát bên đông hơn địch sát sườn -> Yên tâm, giảm nhẹ sợ hãi
+                float calmRate = Mathf.Min(Mathf.Abs(netPressure), maxAllyCalmRate);
+                debugCurrentPanicRate = -calmRate;
+                currentPanic -= calmRate * Time.deltaTime;
+                debugStateDescription = $"Đồng đội sát cánh che chở (Giảm -{calmRate:F1}/s)";
+            }
+        }
+        // TÌNH HUỐNG 2: KHÔNG CÓ ĐỊCH ÁP SÁT TRONG VÒNG NGUY HIỂM (debugInnerEnemies == 0)
+        // Kể cả ngoài xa 10-18m vẫn có lính hỗn chiến (debugOuterEnemies > 0),
+        // người chơi đã có khoảng thở -> TỰ ĐỘNG HỒI PHỤC BÌNH TĨNH!
+        else
+        {
+            // Tốc độ hồi phục cơ bản + nếu có đồng đội bên cạnh thì bình tĩnh nhanh hơn
+            float recoveryRate = calmDownRate + (debugCloseAllies * 0.5f);
+            recoveryRate = Mathf.Min(recoveryRate, maxAllyCalmRate);
+
+            debugCurrentPanicRate = -recoveryRate;
+            currentPanic -= recoveryRate * Time.deltaTime;
+
+            if (debugOuterEnemies > 0)
+            {
+                debugStateDescription = $"Tạm thoát cận chiến, định thần lại (Giảm -{recoveryRate:F1}/s)";
+            }
+            else
+            {
+                debugStateDescription = $"An toàn ra xa giao tranh (Giảm -{recoveryRate:F1}/s)";
             }
         }
 
         currentPanic = Mathf.Clamp(currentPanic, 0f, maxCourageCap);
 
-        if (Mathf.Abs(previousPanic - currentPanic) > 0.01f)
+        if (Mathf.Abs(lastReportedPanic - currentPanic) > 0.05f || (currentPanic == 0f && lastReportedPanic != 0f) || (currentPanic >= maxCourageCap && lastReportedPanic < maxCourageCap))
+        {
+            lastReportedPanic = currentPanic;
             onPanicChanged?.Invoke(currentPanic, maxCourageCap);
+        }
 
         CheckPanicSuddenDeath();
     }
@@ -431,20 +445,35 @@ public class PlayerPanicSystem : MonoBehaviour
 
     #region Audio System
 
+    private AudioSourceBooster breathingBooster;
+    private AudioSourceBooster heartbeatBooster;
+
     private void SetupAudioSources()
     {
-        heartbeatAudioSource = PrepareAudioSource(heartbeatAudioSource, heartbeatClip);
-        breathingAudioSource = PrepareAudioSource(breathingAudioSource, heavyBreathingClip);
-        battleAmbienceAudioSource1 = PrepareAudioSource(battleAmbienceAudioSource1, battleAmbienceClip1);
-        battleAmbienceAudioSource2 = PrepareAudioSource(battleAmbienceAudioSource2, battleAmbienceClip2);
+        heartbeatAudioSource = PrepareAudioSource(heartbeatAudioSource, heartbeatClip, "[Audio_Heartbeat]", out heartbeatBooster);
+        breathingAudioSource = PrepareAudioSource(breathingAudioSource, heavyBreathingClip, "[Audio_Breathing]", out breathingBooster);
+        battleAmbienceAudioSource1 = PrepareAudioSource(battleAmbienceAudioSource1, battleAmbienceClip1, "[Audio_BattleAmbience1]", out _);
+        battleAmbienceAudioSource2 = PrepareAudioSource(battleAmbienceAudioSource2, battleAmbienceClip2, "[Audio_BattleAmbience2]", out _);
     }
 
-    private AudioSource PrepareAudioSource(AudioSource source, AudioClip clip)
+    private AudioSource PrepareAudioSource(AudioSource source, AudioClip clip, string childName, out AudioSourceBooster booster)
     {
+        booster = null;
         if (source == null)
         {
-            source = gameObject.AddComponent<AudioSource>();
+            Transform child = transform.Find(childName);
+            if (child == null)
+            {
+                GameObject go = new GameObject(childName);
+                go.transform.SetParent(transform, false);
+                child = go.transform;
+            }
+            source = child.GetComponent<AudioSource>();
+            if (source == null) source = child.gameObject.AddComponent<AudioSource>();
         }
+
+        booster = source.GetComponent<AudioSourceBooster>();
+        if (booster == null) booster = source.gameObject.AddComponent<AudioSourceBooster>();
 
         // Tắt playOnAwake và đặt volume = 0 để tuyệt đối không bị nổ tiếng khi vừa load cảnh
         source.playOnAwake = false;
@@ -461,6 +490,10 @@ public class PlayerPanicSystem : MonoBehaviour
 
     private void UpdateAudio()
     {
+        // Đồng bộ hệ số khuếch đại Boost theo thời gian thực (chống rè và lệch)
+        if (breathingBooster != null) breathingBooster.boostMultiplier = breathingBoost;
+        if (heartbeatBooster != null) heartbeatBooster.boostMultiplier = heartbeatBoost;
+
         // 1. Thở dốc: Chỉ cần vừa ấn SHIFT vừa ấn phím di chuyển W/A/S/D là kích hoạt ngay!
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
         float h = Input.GetAxisRaw("Horizontal");
@@ -611,5 +644,38 @@ public class PlayerPanicSystem : MonoBehaviour
         // VÒNG CHIẾN TRƯỜNG (Vàng): Quét địch, đếm đồng đội bảo vệ, và tầm nhìn đồng đội chết (18m)
         Gizmos.color = new Color(1f, 0.92f, 0.016f, 0.45f);
         Gizmos.DrawWireSphere(transform.position, outerZoneRadius);
+    }
+}
+
+
+public class AudioSourceBooster : MonoBehaviour
+{
+    [Range(1f, 5f)] public float boostMultiplier = 1f;
+
+    void OnAudioFilterRead(float[] data, int channels)
+    {
+        float boost = boostMultiplier;
+        if (boost <= 1.001f) return;
+
+        for (int i = 0; i < data.Length; i++)
+        {
+            float s = data[i] * boost;
+            // Thuật toán Soft-Knee Limiter:
+            // - Dưới ngưỡng 0.95: khuếch đại tuyến tính 100% trung thực (bit-perfect).
+            // - Trên ngưỡng 0.95: nén mềm tiệm cận 0.999 để chống hiện tượng cắt ngọn sóng (Hard Clipping) gây rè loa.
+            if (s > 0.95f)
+            {
+                s = 0.95f + (s - 0.95f) / (1f + (s - 0.95f) * 2f);
+                if (s > 0.999f) s = 0.999f;
+            }
+            else if (s < -0.95f)
+            {
+                float neg = -s;
+                neg = 0.95f + (neg - 0.95f) / (1f + (neg - 0.95f) * 2f);
+                if (neg > 0.999f) neg = 0.999f;
+                s = -neg;
+            }
+            data[i] = s;
+        }
     }
 }

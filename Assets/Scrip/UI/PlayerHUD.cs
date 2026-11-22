@@ -34,6 +34,10 @@ public class PlayerHUD : MonoBehaviour
     private float targetPanicFill = 0f;
     private float panicEaseTimer = 0f;
 
+    // Cache để chống tạo rác chuỗi string và chống rebuild TextMeshPro mỗi frame (Zero GC Alloc / No Lag)
+    private int lastDisplayPanic = -1;
+    private int lastDisplayHealth = -1;
+
     void Start()
     {
         // 1. Tự tìm Player Health nếu chưa kéo thả vào Inspector
@@ -84,7 +88,32 @@ public class PlayerHUD : MonoBehaviour
 
     void Update()
     {
-        // 1. Hiệu ứng thanh tụt máu chậm phía sau
+        // 1. Luôn tự động liên kết với PlayerPanicSystem nếu chưa có (Dùng Instance O(1) tức thời, tuyệt đối không dùng FindObjectOfType gây lag)
+        if (panicSystem == null)
+        {
+            panicSystem = PlayerPanicSystem.Instance;
+            if (panicSystem != null)
+            {
+                UpdatePanicUI(true);
+            }
+        }
+
+        // Cập nhật thanh Sợ Hãi và Text theo thời gian thực mỗi frame (Zero GC Alloc)
+        if (panicSystem != null)
+        {
+            UpdatePanicUI(false);
+
+            if (panicEaseImage != null && Mathf.Abs(panicEaseImage.fillAmount - targetPanicFill) > 0.001f)
+            {
+                panicEaseImage.fillAmount = Mathf.MoveTowards(
+                    panicEaseImage.fillAmount,
+                    targetPanicFill,
+                    easeSpeed * Time.deltaTime
+                );
+            }
+        }
+
+        // 2. Hiệu ứng thanh tụt máu chậm phía sau
         if (playerHealth != null && healthEaseImage != null)
         {
             if (easeTimer > 0f)
@@ -102,23 +131,6 @@ public class PlayerHUD : MonoBehaviour
             else if (healthEaseImage.fillAmount < targetFill)
             {
                 healthEaseImage.fillAmount = targetFill;
-            }
-        }
-
-        // 2. Hiệu ứng thanh Sợ Hãi mượt
-        if (panicSystem != null && panicEaseImage != null)
-        {
-            if (panicEaseTimer > 0f)
-            {
-                panicEaseTimer -= Time.deltaTime;
-            }
-            else if (Mathf.Abs(panicEaseImage.fillAmount - targetPanicFill) > 0.001f)
-            {
-                panicEaseImage.fillAmount = Mathf.MoveTowards(
-                    panicEaseImage.fillAmount,
-                    targetPanicFill,
-                    easeSpeed * Time.deltaTime
-                );
             }
         }
     }
@@ -149,7 +161,7 @@ public class PlayerHUD : MonoBehaviour
 
         targetFill = currentHp / maxHp;
 
-        if (healthFillImage != null)
+        if (healthFillImage != null && (immediate || Mathf.Abs(healthFillImage.fillAmount - targetFill) > 0.0005f))
         {
             healthFillImage.fillAmount = targetFill;
         }
@@ -167,7 +179,11 @@ public class PlayerHUD : MonoBehaviour
             {
                 displayHealth = 1;
             }
-            healthText.text = $"Health: {displayHealth} / 100";
+            if (displayHealth != lastDisplayHealth || immediate)
+            {
+                lastDisplayHealth = displayHealth;
+                healthText.text = $"Health: {displayHealth} / 100";
+            }
         }
     }
 
@@ -180,7 +196,8 @@ public class PlayerHUD : MonoBehaviour
 
         targetPanicFill = current / maxCap;
 
-        if (panicFillImage != null)
+        // Chỉ set fillAmount khi có thay đổi để tránh gọi GPU repaint vô ích
+        if (panicFillImage != null && (immediate || Mathf.Abs(panicFillImage.fillAmount - targetPanicFill) > 0.0005f))
         {
             panicFillImage.fillAmount = targetPanicFill;
         }
@@ -190,11 +207,16 @@ public class PlayerHUD : MonoBehaviour
             panicEaseImage.fillAmount = targetPanicFill;
         }
 
+        // ZERO GC ALLOC: Chỉ nối chuỗi và cập nhật TextMeshPro khi con số integer thực sự nhảy sang số mới!
         if (panicText != null)
         {
             int displayPanic = Mathf.RoundToInt(current);
-            int displayMax = Mathf.RoundToInt(maxCap);
-            panicText.text = $"Panic: {displayPanic} / {displayMax}";
+            if (displayPanic != lastDisplayPanic || immediate)
+            {
+                lastDisplayPanic = displayPanic;
+                int displayMax = Mathf.RoundToInt(maxCap);
+                panicText.text = $"Panic: {displayPanic} / {displayMax}";
+            }
         }
     }
 }

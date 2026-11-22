@@ -94,7 +94,7 @@ public class ArcherCombat : NPCCombat
 
     protected override void Update()
     {
-        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode)
+        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.isActiveAndEnabled && CinematicBattleDirector.Instance.enableDirectorMode)
         {
             return;
         }

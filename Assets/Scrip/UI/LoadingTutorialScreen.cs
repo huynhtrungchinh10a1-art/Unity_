@@ -20,12 +20,23 @@ public class LoadingTutorialScreen : MonoBehaviour
     public Button okButton;
     public TextMeshProUGUI okButtonText;
 
+    [Header("Team Selection Popup (Chọn Phe)")]
+    public string teamAName = "Tào Ngụy";
+    public string teamBName = "Thục Hán";
+    public GameObject teamSelectPopup;
+    public Button teamAButton;
+    public Button teamBButton;
+
     [Header("Testing & Simulation")]
     public bool autoSimulateLoading = true; 
     public float simulatedDuration = 2.5f;
 
     [Header("Fade Out Settings")]
     public float fadeOutSpeed = 2.5f;
+
+    [Header("Audio Settings")]
+    [Tooltip("Tắt toàn bộ âm thanh trong lúc đang mở màn hình Loading/Hướng dẫn, chỉ bật khi người chơi bấm nút Đã hiểu")]
+    public bool muteAudioUntilDismissed = true;
 
     [Header("Events")]
     public UnityEvent onBattleStarted;
@@ -67,6 +78,43 @@ public class LoadingTutorialScreen : MonoBehaviour
         if (progressBar != null)
         {
             progressBar.value = 0f;
+        }
+
+        if (teamSelectPopup != null)
+        {
+            teamSelectPopup.SetActive(false);
+        }
+
+        if (teamAButton != null)
+        {
+            teamAButton.onClick.AddListener(() => OnTeamSelected(Team.TeamA));
+        }
+
+        if (teamBButton != null)
+        {
+            teamBButton.onClick.AddListener(() => OnTeamSelected(Team.TeamB));
+        }
+
+        // Tắt toàn bộ âm thanh trong game cho đến khi bấm nút Đã hiểu
+        if (muteAudioUntilDismissed)
+        {
+            AudioListener.pause = true;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (muteAudioUntilDismissed)
+        {
+            AudioListener.pause = false;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (muteAudioUntilDismissed)
+        {
+            AudioListener.pause = false;
         }
     }
 
@@ -148,7 +196,77 @@ public class LoadingTutorialScreen : MonoBehaviour
     {
         if (!isLoaded || isFading) return;
 
+        // Ẩn nút OK để người chơi chọn phe
+        if (okButton != null)
+        {
+            okButton.gameObject.SetActive(false);
+        }
+
+        // Hiện popup chọn phe đã tạo trên Canvas
+        if (teamSelectPopup != null)
+        {
+            teamSelectPopup.SetActive(true);
+        }
+        else
+        {
+            // Dự phòng nếu chưa gán popup thì vào thẳng trận
+            OnTeamSelected(Team.Neutral);
+        }
+    }
+
+    public void OnTeamSelected(Team chosenTeam)
+    {
+        if (isFading) return;
+
+        ApplyTeamToPlayer(chosenTeam);
+
+        if (teamSelectPopup != null)
+        {
+            teamSelectPopup.SetActive(false);
+        }
+
+        // Bật lại toàn bộ âm thanh khi người chơi đã chọn phe và vào trận
+        if (muteAudioUntilDismissed)
+        {
+            AudioListener.pause = false;
+        }
+
         StartCoroutine(DismissRoutine());
+    }
+
+    private void ApplyTeamToPlayer(Team chosenTeam)
+    {
+        HealthAndTeam playerHealth = null;
+
+        if (PlayerMovement.PlayerTransform != null)
+        {
+            playerHealth = PlayerMovement.PlayerTransform.GetComponent<HealthAndTeam>();
+        }
+
+        if (playerHealth == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                playerHealth = playerObj.GetComponent<HealthAndTeam>();
+            }
+        }
+
+        if (playerHealth == null)
+        {
+            PlayerMovement pm = FindObjectOfType<PlayerMovement>();
+            if (pm != null)
+            {
+                playerHealth = pm.GetComponent<HealthAndTeam>();
+            }
+        }
+
+        if (playerHealth != null)
+        {
+            playerHealth.teamCurrent = chosenTeam;
+            string teamName = chosenTeam == Team.TeamA ? teamAName : teamBName;
+            Debug.Log($"<color=cyan>[LoadingTutorialScreen]</color> Người chơi đã gia nhập phe: <b>{chosenTeam} ({teamName})</b>!");
+        }
     }
 
     private IEnumerator DismissRoutine()

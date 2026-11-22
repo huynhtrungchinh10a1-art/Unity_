@@ -8,7 +8,15 @@ public class ThirdPersonCamera : MonoBehaviour
     public Animator anim;
     public Transform firstPersonTarget;
 
-    public float mouseSpeed = 3f;
+    [Header("Mouse & Smoothing Settings (Chống Chóng Mặt)")]
+    public float mouseSpeed = 2.0f;
+    [Tooltip("Bật làm mượt camera để chống giật/chóng mặt khi lắc chuột nhanh")]
+    public bool enableSmoothing = true;
+    [Range(0.01f, 0.15f)]
+    [Tooltip("Thời gian làm mượt (càng cao càng đầm, 0.03 - 0.05 là chuẩn vàng không bị trễ)")]
+    public float smoothTime = 0.04f;
+
+    [Header("Camera Distance & Bounds")]
     public float minY = -30f;
     public float maxY = 60f;
     public float distance = 3f;
@@ -17,10 +25,25 @@ public class ThirdPersonCamera : MonoBehaviour
 
     float yaw;
     float pitch;
+    float currentYaw;
+    float currentPitch;
+    float yawVelocity;
+    float pitchVelocity;
 
     bool isLocked = false;
     public bool isFirstPerson = false;
     Transform lockTarget;
+
+    void Start()
+    {
+        if (pivot != null)
+        {
+            Vector3 angles = pivot.eulerAngles;
+            yaw = currentYaw = angles.y;
+            pitch = currentPitch = angles.x;
+            if (pitch > 180f) pitch -= 360f;
+        }
+    }
 
     void LateUpdate()
     {
@@ -29,9 +52,8 @@ public class ThirdPersonCamera : MonoBehaviour
             pivot.position = firstPersonTarget.position;
             
             // Xoay nhân vật theo hướng yaw của camera ở góc nhìn thứ nhất
-            Vector3 targetEuler = target.eulerAngles;
-            targetEuler.y = yaw;
-            target.rotation = Quaternion.Euler(0, yaw, 0);
+            float activeYaw = enableSmoothing ? currentYaw : yaw;
+            target.rotation = Quaternion.Euler(0, activeYaw, 0);
         }
         else
         {
@@ -105,7 +127,16 @@ public class ThirdPersonCamera : MonoBehaviour
         pitch -= mouseY;
         pitch = Mathf.Clamp(pitch, minY, maxY);
 
-        pivot.rotation = Quaternion.Euler(pitch, yaw, 0);
+        if (enableSmoothing)
+        {
+            currentYaw = Mathf.SmoothDampAngle(currentYaw, yaw, ref yawVelocity, smoothTime);
+            currentPitch = Mathf.SmoothDampAngle(currentPitch, pitch, ref pitchVelocity, smoothTime);
+            pivot.rotation = Quaternion.Euler(currentPitch, currentYaw, 0);
+        }
+        else
+        {
+            pivot.rotation = Quaternion.Euler(pitch, yaw, 0);
+        }
         
         if (isFirstPerson && firstPersonTarget != null)
         {

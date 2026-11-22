@@ -194,7 +194,7 @@ public class NPCCombat : MonoBehaviour
     protected virtual void Update()
     {
         // Khi bật chế độ đạo diễn quay phim: Không để AI tự ý di chuyển hoặc đánh
-        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode)
+        if (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.isActiveAndEnabled && CinematicBattleDirector.Instance.enableDirectorMode)
         {
             return;
         }
@@ -1019,7 +1019,7 @@ public class NPCCombat : MonoBehaviour
             // 1. Bật lại script NPCCombat / ArcherCombat
             this.enabled = true;
 
-            bool isDirectorMode = (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.enableDirectorMode);
+            bool isDirectorMode = (CinematicBattleDirector.Instance != null && CinematicBattleDirector.Instance.isActiveAndEnabled && CinematicBattleDirector.Instance.enableDirectorMode);
 
             // 2. Bật lại CharacterController (chỉ khi không ở chế độ đạo diễn để tránh va chạm vật lý chen chúc)
             if (controller != null)

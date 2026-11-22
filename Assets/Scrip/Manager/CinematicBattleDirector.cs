@@ -103,6 +103,16 @@ public class CinematicBattleDirector : MonoBehaviour
         }
     }
 
+    void OnEnable()
+    {
+        if (Instance == null) Instance = this;
+    }
+
+    void OnDisable()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     void Start()
     {
         if (NPCCullingManager.Instance != null)
