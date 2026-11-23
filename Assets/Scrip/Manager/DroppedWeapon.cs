@@ -20,7 +20,13 @@ public class DroppedWeapon : MonoBehaviour
 
     public void DetachFromHand()
     {
-        transform.SetParent(null);
+        Transform parentContainer = null;
+        if (DroppedWeaponManager.Instance != null)
+        {
+            parentContainer = DroppedWeaponManager.Instance.WeaponContainer;
+        }
+
+        transform.SetParent(parentContainer);
 
         // Bắn tia Raycast xuống đất để thanh kiếm/khiên nằm phẳng tự nhiên trên mặt đất
         if (Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 4.0f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))

@@ -50,8 +50,7 @@ public class MassArmySpawner : MonoBehaviour
     public int zone2TroopCount = 6500; 
     public int zone3TroopCount = 2500; 
 
-    [Tooltip("Nếu bật: Khu 1 chủ yếu phe A (bảo hộ Player), Khu 2 hỗn chiến 50/50, Khu 3 chủ yếu phe B")]
-    public bool realisticFrontlineTeams = true;
+    public bool realisticFrontlineTeams = false;
 
     public Transform corner1;
     public Transform corner2;
@@ -73,6 +72,11 @@ public class MassArmySpawner : MonoBehaviour
     public int spawnsPerFrame = 250;
 
     public bool syncWithLoadingScreen = true;
+
+    [Header("7. Tỉ Lệ Máu Ban Đầu (Random Initial Health Test)")]
+    public bool randomizeInitialHealth = false;
+    [Range(0.01f, 1f)] public float minHealthPercent = 0.10f;
+    [Range(0.01f, 1f)] public float maxHealthPercent = 0.20f;
 
     [Header("Debug Status")]
     [SerializeField] private int currentSpawnedCount = 0;
@@ -786,6 +790,11 @@ public class MassArmySpawner : MonoBehaviour
         if (ht != null)
         {
             ht.teamCurrent = slot.team;
+            if (randomizeInitialHealth)
+            {
+                float pct = Random.Range(minHealthPercent, maxHealthPercent);
+                ht.currentHealth = Mathf.Max(1f, ht.maxHealth * pct);
+            }
         }
 
         // Đảm bảo script chiến đấu và điều khiển được bật

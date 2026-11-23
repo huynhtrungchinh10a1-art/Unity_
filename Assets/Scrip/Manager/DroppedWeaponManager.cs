@@ -25,6 +25,22 @@ public class DroppedWeaponManager : MonoBehaviour
     public float cullDistance = 45f;
     public Transform playerTransform;
 
+    [Header("Hierarchy Container")]
+    public Transform weaponContainer;
+    public Transform WeaponContainer
+    {
+        get
+        {
+            if (weaponContainer == null)
+            {
+                GameObject go = new GameObject("[DroppedWeapons_Container]");
+                go.transform.SetParent(transform, false);
+                weaponContainer = go.transform;
+            }
+            return weaponContainer;
+        }
+    }
+
     [Header("Debug Stats")]
     [SerializeField] private int totalWeaponsOnGround = 0;
     [SerializeField] private int culledWeaponsCount = 0;

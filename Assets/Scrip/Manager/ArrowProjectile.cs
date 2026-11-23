@@ -15,7 +15,7 @@ public class ArrowProjectile : MonoBehaviour
     public bool stayOnMap = true;
     public float disappearDelay = 10f;
     public float groundEmbedDepth = 0.12f;
-    public float characterEmbedDepth = 0.35f;
+    public float characterEmbedDepth = 0.46f;
     [Range(20f, 80f)]
     public float minGroundAngle = 35f;
     [Range(20f, 80f)]
@@ -101,11 +101,12 @@ public class ArrowProjectile : MonoBehaviour
                 // Bỏ qua người bắn
                 if (owner != null && (h.collider.gameObject == owner || h.collider.transform.IsChildOf(owner.transform))) continue;
 
-                // Nếu va phải đồng đội: Mũi tên tiếp tục bay xuyên qua đồng đội
+                // Nếu va phải đồng đội hoặc đối tượng đã chết: Mũi tên tiếp tục bay xuyên qua
                 HealthAndTeam th = h.collider.GetComponentInParent<HealthAndTeam>();
-                if (th != null && th.isAlive && ownerHealth != null && !ownerHealth.IsEnemy(th.teamCurrent))
+                if (th != null)
                 {
-                    continue;
+                    if (!th.isAlive) continue;
+                    if (ownerHealth != null && !ownerHealth.IsEnemy(th.teamCurrent)) continue;
                 }
 
                 OnHitTarget(h.collider, h.point);
@@ -123,6 +124,7 @@ public class ArrowProjectile : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (hasHit || other == null) return;
+        if (other.isTrigger) return;
         if (other.gameObject == gameObject || other.transform.IsChildOf(transform)) return;
         if (other.GetComponentInParent<ArrowProjectile>() != null) return;
 
@@ -139,21 +141,34 @@ public class ArrowProjectile : MonoBehaviour
         if (owner != null && (other.gameObject == owner || other.transform.IsChildOf(owner.transform))) return;
 
         HealthAndTeam targetHealth = other.GetComponentInParent<HealthAndTeam>();
-        // Nếu va phải đồng đội: Mũi tên tiếp tục bay xuyên qua đồng đội để bay tới quân địch
-        if (targetHealth != null && targetHealth.isAlive)
+        // Nếu va phải đồng đội hoặc đối tượng đã chết: Không cho mũi tên cắm trên không
+        if (targetHealth != null)
         {
-            if (ownerHealth != null && !ownerHealth.IsEnemy(targetHealth.teamCurrent))
-            {
-                return;
-            }
+            if (!targetHealth.isAlive) return;
+            if (ownerHealth != null && !ownerHealth.IsEnemy(targetHealth.teamCurrent)) return;
         }
 
         hasHit = true;
+        bool isCharacter = (targetHealth != null);
 
         // Nếu cắm vào ĐẤT / MÔI TRƯỜNG (không phải cắm vào nhân vật):
         // Ép góc cắm luôn chúc từ trên trời xuống (35 - 55 độ) để đuôi tên vểnh lên cao, tạo cảm giác tên bắn từ trên cắm xuống
-        if (targetHealth == null)
+        if (!isCharacter)
         {
+            // Ép trực tiếp cao độ mặt đất theo Terrain (chuẩn xác 100%, không bị ảnh hưởng bởi collider cản tia trên trời)
+            if (Terrain.activeTerrain != null)
+            {
+                hitPoint.y = Terrain.activeTerrain.SampleHeight(hitPoint) + Terrain.activeTerrain.transform.position.y;
+            }
+            else
+            {
+                RaycastHit groundHit;
+                if (Physics.Raycast(hitPoint + Vector3.up * 1.5f, Vector3.down, out groundHit, 5.0f, LayerMask.GetMask("Default")))
+                {
+                    hitPoint = groundHit.point;
+                }
+            }
+
             Vector3 flightHoriz = velocity;
             flightHoriz.y = 0;
             if (flightHoriz.sqrMagnitude < 0.001f)
@@ -181,22 +196,25 @@ public class ArrowProjectile : MonoBehaviour
         }
 
         float halfLen = arrowLength * 0.5f;
-        float baseDepth = (targetHealth != null && targetHealth.isAlive) ? characterEmbedDepth : groundEmbedDepth;
+        float baseDepth = isCharacter ? characterEmbedDepth : groundEmbedDepth;
         float actualDepth = Mathf.Clamp(baseDepth + Random.Range(-0.02f, 0.02f), 0.04f, arrowLength * 0.9f);
 
         // Đặt tâm sao cho đầu nhọn cắm vào hitPoint một đoạn actualDepth, còn lại phần lớn thân tên trồi lên trên mặt đất / cơ thể
         transform.position = hitPoint + transform.forward * (actualDepth - halfLen);
 
-        if (targetHealth != null && targetHealth.isAlive)
+        if (isCharacter)
         {
-            if (ownerHealth == null || ownerHealth.IsEnemy(targetHealth.teamCurrent))
+            if (targetHealth.isAlive && (ownerHealth == null || ownerHealth.IsEnemy(targetHealth.teamCurrent)))
             {
                 targetHealth.TakeDamage(damage, owner);
             }
 
-            // Gắn mũi tên vào xương gần nhất của nhân vật để uốn lượn theo cử động
+            // Gắn mũi tên vào xương gần nhất của nhân vật (kể cả khi vừa chết/đang ngã) để chuyển động uốn lượn theo cơ thể
             Transform closestBone = FindClosestBone(other.transform, hitPoint);
-            transform.parent = closestBone;
+            if (closestBone != null)
+            {
+                transform.SetParent(closestBone, true);
+            }
 
             // Nếu cắm vào NPC: Cập nhật renderers cho NPC và tự động tắt mesh nếu NPC đang bị culled ở xa
             NPCCombat npcCombat = other.GetComponentInParent<NPCCombat>();
@@ -315,6 +333,24 @@ public class ArrowProjectile : MonoBehaviour
         // Chuyển giao ma trận cho GroundArrowManager (Total War GPU Instancing) và trả mũi tên về Pool
         if (transform.parent == null)
         {
+            // Bảo vệ kép chống lơ lửng trên không: ép vị trí sát mặt đất trước khi nướng GPU Instancing
+            if (Terrain.activeTerrain != null)
+            {
+                float terrY = Terrain.activeTerrain.SampleHeight(transform.position) + Terrain.activeTerrain.transform.position.y;
+                float halfLen = arrowLength * 0.5f;
+                Vector3 groundPoint = new Vector3(transform.position.x, terrY, transform.position.z);
+                transform.position = groundPoint + transform.forward * (groundEmbedDepth - halfLen);
+            }
+            else
+            {
+                RaycastHit groundHit;
+                if (Physics.Raycast(transform.position + Vector3.up * 1.5f, Vector3.down, out groundHit, 5.0f, LayerMask.GetMask("Default")))
+                {
+                    float halfLen = arrowLength * 0.5f;
+                    transform.position = groundHit.point + transform.forward * (groundEmbedDepth - halfLen);
+                }
+            }
+
             MeshFilter mf = GetComponentInChildren<MeshFilter>();
             MeshRenderer mr = GetComponentInChildren<MeshRenderer>();
             if (mf != null && mr != null && mf.sharedMesh != null && mr.sharedMaterial != null)

@@ -90,6 +90,10 @@ public class ArcherCombat : NPCCombat
         maxTotalAttackersPerTarget = maxTotalAttackers;
         base.Start();
         archerAnim = GetComponent<ArcherAnimatorHandler>();
+        if (archerAnim != null && archerAnim.bowAnim != null)
+        {
+            equippedWeapons = new GameObject[] { archerAnim.bowAnim.gameObject };
+        }
     }
 
     protected override void Update()

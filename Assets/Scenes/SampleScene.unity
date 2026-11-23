@@ -9411,8 +9411,8 @@ MonoBehaviour:
     type: 3}
   teamBArcherPrefab: {fileID: 7550338051963361743, guid: ee3ac97b13a4fb14cad99cd8bdfa949f,
     type: 3}
-  swordCountPerTeam: 3000
-  archerCountPerTeam: 2000
+  swordCountPerTeam: 1500
+  archerCountPerTeam: 1000
   unitsPerRow: 100
   spacingX: 3.2
   spacingZ: 6
@@ -9425,10 +9425,10 @@ MonoBehaviour:
   enable3ZoneSpawning: 1
   zone1AreaRatio: 0.2
   zone2AreaRatio: 0.5
-  zone1TroopCount: 1000
-  zone2TroopCount: 6500
-  zone3TroopCount: 2500
-  realisticFrontlineTeams: 1
+  zone1TroopCount: 500
+  zone2TroopCount: 3250
+  zone3TroopCount: 1250
+  realisticFrontlineTeams: 0
   corner1: {fileID: 1856939290}
   corner2: {fileID: 879025716}
   corner3: {fileID: 142570095}
@@ -9440,6 +9440,9 @@ MonoBehaviour:
   spawnInBatches: 1
   spawnsPerFrame: 350
   syncWithLoadingScreen: 1
+  randomizeInitialHealth: 1
+  minHealthPercent: 0.025
+  maxHealthPercent: 0.035
   currentSpawnedCount: 0
   isSpawning: 0
 --- !u!4 &680448948
@@ -13724,6 +13727,9 @@ MonoBehaviour:
   playerTransform: {fileID: 1556592817}
   castShadows: 0
   receiveShadows: 1
+  preloadedBattlefield: {fileID: 11400000, guid: e21777011bb2b4d4f8a3e29ab9645649,
+    type: 2}
+  autoLoadSavedBattlefield: 1
   totalGroundedCorpses: 0
   uniqueCorpseTypesCount: 0
 --- !u!114 &961173093
@@ -13740,6 +13746,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cullDistance: 45
   playerTransform: {fileID: 1556592817}
+  weaponContainer: {fileID: 0}
   totalWeaponsOnGround: 0
   culledWeaponsCount: 0
 --- !u!114 &961173094
@@ -13770,7 +13777,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   hornClip: {fileID: 8300000, guid: 0dfcaebab05b88a40b85195e869067ea, type: 3}
   hornVolume: 1
-  enableAutoStorm: 1
+  enableAutoStorm: 0
   initialDelay: 35
   minInterval: 45
   maxInterval: 75
@@ -20436,12 +20443,12 @@ PrefabInstance:
     - target: {fileID: 1931856272950024225, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: runSpeed
-      value: 5
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 1931856272950024225, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: walkSpeed
-      value: 2.5
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 1931856272950024225, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
@@ -20606,7 +20613,7 @@ PrefabInstance:
     - target: {fileID: 6176184778323767338, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6341471984810012719, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
@@ -20676,7 +20683,7 @@ PrefabInstance:
     - target: {fileID: 7506817507104346469, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

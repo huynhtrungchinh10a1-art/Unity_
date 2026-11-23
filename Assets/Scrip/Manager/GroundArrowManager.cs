@@ -65,6 +65,17 @@ public class GroundArrowManager : MonoBehaviour
         if (arrowMesh == null && mesh != null) arrowMesh = mesh;
         if (arrowMaterial == null && mat != null) arrowMaterial = mat;
 
+        // VỆ SINH CAO ĐỘ: Đảm bảo mũi tên không bao giờ lơ lửng trên không (> 0.35m so với mặt đất)
+        if (Terrain.activeTerrain != null)
+        {
+            Vector3 pos = new Vector3(matrix.m03, matrix.m13, matrix.m23);
+            float terrainY = Terrain.activeTerrain.SampleHeight(pos) + Terrain.activeTerrain.transform.position.y;
+            if (pos.y - terrainY > 0.35f || pos.y < terrainY - 0.25f)
+            {
+                matrix.m13 = terrainY + 0.12f;
+            }
+        }
+
         if (currentBatch.Count >= BATCH_SIZE)
         {
             batches.Add(currentBatch);
@@ -148,6 +159,34 @@ public class GroundArrowManager : MonoBehaviour
                 arrowMesh, 0, arrowMaterial, drawArray, visibleCount,
                 null, castShadows, receiveShadows
             );
+        }
+    }
+
+    public List<Matrix4x4> GetAllArrowMatrices()
+    {
+        List<Matrix4x4> list = new List<Matrix4x4>(TotalGroundedArrows);
+        for (int b = 0; b < batches.Count; b++)
+        {
+            list.AddRange(batches[b]);
+        }
+        list.AddRange(currentBatch);
+        return list;
+    }
+
+    public void LoadPreloadedArrows(Mesh mesh, Material mat, List<Matrix4x4> matrices)
+    {
+        if (mesh != null) arrowMesh = mesh;
+        if (mat != null)
+        {
+            arrowMaterial = mat;
+            if (!arrowMaterial.enableInstancing) arrowMaterial.enableInstancing = true;
+        }
+
+        if (matrices == null || matrices.Count == 0) return;
+
+        for (int i = 0; i < matrices.Count; i++)
+        {
+            RegisterArrow(arrowMesh, arrowMaterial, matrices[i]);
         }
     }
 

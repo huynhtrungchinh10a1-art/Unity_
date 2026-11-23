@@ -90,6 +90,8 @@ public class NPCAnimatorHandler : MonoBehaviour
         if (anim == null) return;
         anim.SetInteger("DeadIndex", deadIndex);
         anim.SetTrigger("DoDead");
+        IsUsingRootMotion = true;
+        anim.applyRootMotion = true;
     }
 
     public virtual void PlayBlock(bool isBlocking)
@@ -129,7 +131,10 @@ public class NPCAnimatorHandler : MonoBehaviour
         if (controller == null || !controller.enabled) return;
 
         Vector3 delta = anim.deltaPosition;
-        delta.y += combat.VerticalVelocity * Time.deltaTime;
+        if (combat != null)
+        {
+            delta.y += combat.VerticalVelocity * Time.deltaTime;
+        }
 
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
         bool rolling = state.IsTag("Roll");
@@ -188,7 +193,7 @@ public class NPCAnimatorHandler : MonoBehaviour
 
     private Vector3 ApplySeparationForce(Vector3 delta)
     {
-        if (BattlefieldManager.Instance == null) return delta;
+        if (BattlefieldManager.Instance == null || combat == null) return delta;
 
         List<NPCCombat> allies = BattlefieldManager.Instance.GetNPCsInCell(transform.position);
         if (allies == null) return delta;
@@ -196,17 +201,19 @@ public class NPCAnimatorHandler : MonoBehaviour
         Vector3 separation = Vector3.zero;
         int count = 0;
 
-        foreach (NPCCombat ally in allies)
+        for (int i = 0; i < allies.Count; i++)
         {
-            if (ally != combat && ally.MyHealth.isAlive && !myHealth.IsEnemy(ally.MyHealth.teamCurrent))
+            NPCCombat ally = allies[i];
+            if (ally == null || ally.gameObject == null || ally == combat) continue;
+            if (ally.MyHealth == null || !ally.MyHealth.isAlive) continue;
+            if (myHealth != null && myHealth.IsEnemy(ally.MyHealth.teamCurrent)) continue;
+
+            float dist = Vector3.Distance(transform.position, ally.transform.position);
+            if (dist < combat.separationDistance && dist > 0.01f)
             {
-                float dist = Vector3.Distance(transform.position, ally.transform.position);
-                if (dist < combat.separationDistance && dist > 0.01f)
-                {
-                    Vector3 dir = (transform.position - ally.transform.position).normalized;
-                    separation += dir * (combat.separationDistance - dist);
-                    count++;
-                }
+                Vector3 dir = (transform.position - ally.transform.position).normalized;
+                separation += dir * (combat.separationDistance - dist);
+                count++;
             }
         }
 

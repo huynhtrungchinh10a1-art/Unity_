@@ -72,6 +72,7 @@ public class NPCCombat : MonoBehaviour
 
     [Header("Weapons (Kéo trực tiếp vào đây)")]
     public GameObject[] equippedWeapons;
+    public GameObject[] EquippedWeapons => equippedWeapons;
 
     protected CharacterController controller;
     protected float verticalVelocity;
@@ -177,6 +178,35 @@ public class NPCCombat : MonoBehaviour
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 15.0f, NavMesh.AllAreas))
             {
                 agent.Warp(hit.position);
+            }
+        }
+
+        // Tự động tìm kiếm Kiếm/Khiên/Cung từ các Socket chứa vũ khí
+        if (equippedWeapons == null || equippedWeapons.Length == 0)
+        {
+            List<GameObject> foundWeapons = new List<GameObject>();
+            Transform[] allChildren = GetComponentsInChildren<Transform>(true);
+            foreach (Transform t in allChildren)
+            {
+                if (t == null) continue;
+                string lower = t.name.ToLower();
+
+                // Chỉ duyệt các Socket vũ khí: Sword_Socket, Shield_Socket, Shield-Socket, Bow_Socket
+                if (lower.Contains("sword_socket") || lower.Contains("shield_socket") || lower.Contains("shield-socket") || lower.Contains("bow_socket"))
+                {
+                    for (int c = 0; c < t.childCount; c++)
+                    {
+                        Transform child = t.GetChild(c);
+                        if (child != null && !child.name.ToLower().Contains("spawnpoint"))
+                        {
+                            foundWeapons.Add(child.gameObject);
+                        }
+                    }
+                }
+            }
+            if (foundWeapons.Count > 0)
+            {
+                equippedWeapons = foundWeapons.ToArray();
             }
         }
 
@@ -928,6 +958,15 @@ public class NPCCombat : MonoBehaviour
             SetCulled(false);
         }
 
+        SkinnedMeshRenderer smr = GetComponentInChildren<SkinnedMeshRenderer>(true);
+        if (smr != null) smr.updateWhenOffscreen = true;
+
+        if (anim != null)
+        {
+            anim.enabled = true;
+            anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        }
+
         if (isRegisteredInGrid && BattlefieldManager.Instance != null)
         {
             BattlefieldManager.Instance.UnregisterNPC(this, currentGridCell);
@@ -939,13 +978,32 @@ public class NPCCombat : MonoBehaviour
         {
             animHandler.PlayDeath(deadIndex);
         }
-        agent.isStopped = true;
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+        }
+
+        if (controller == null) controller = GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = false;
+        }
+
+        DamageHitbox[] hitboxes = GetComponentsInChildren<DamageHitbox>(true);
+        if (hitboxes != null)
+        {
+            for (int i = 0; i < hitboxes.Length; i++)
+            {
+                if (hitboxes[i] != null) hitboxes[i].DisableHitbox();
+            }
+        }
+
         enabled = false;
 
-        // GIAI ĐOẠN 4: Lên lịch nướng xác và tách vũ khí nằm trên đất sau 1.8s
+        // GIAI ĐOẠN 4: Lên lịch nướng xác và tách vũ khí nằm trên đất sau 3.2s (đảm bảo animation ngã chết hoàn tất)
         if (CorpseManager.Instance != null)
         {
-            CorpseManager.Instance.ScheduleCorpseBake(gameObject, deadIndex, equippedWeapons, 1.8f);
+            CorpseManager.Instance.ScheduleCorpseBake(gameObject, deadIndex, equippedWeapons, 3.2f);
         }
     }
 
@@ -956,7 +1014,14 @@ public class NPCCombat : MonoBehaviour
         foreach (var weapon in equippedWeapons)
         {
             if (weapon == null) continue;
-            weapon.transform.SetParent(null);
+            if (DroppedWeaponManager.Instance != null)
+            {
+                weapon.transform.SetParent(DroppedWeaponManager.Instance.WeaponContainer);
+            }
+            else
+            {
+                weapon.transform.SetParent(null);
+            }
         }
     }
 
