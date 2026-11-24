@@ -13727,8 +13727,7 @@ MonoBehaviour:
   playerTransform: {fileID: 1556592817}
   castShadows: 0
   receiveShadows: 1
-  preloadedBattlefield: {fileID: 11400000, guid: e21777011bb2b4d4f8a3e29ab9645649,
-    type: 2}
+  preloadedBattlefield: {fileID: 0}
   autoLoadSavedBattlefield: 1
   totalGroundedCorpses: 0
   uniqueCorpseTypesCount: 0
@@ -13789,7 +13788,12 @@ MonoBehaviour:
   skyHeight: 30
   stormRadius: 17
   targetMode: 0
+  playerTransform: {fileID: 0}
   playerCenterOffset: 0
+  enableDangerZone: 1
+  dangerColor: {r: 1, g: 0.12, b: 0.12, a: 0.45}
+  dangerBorderColor: {r: 1, g: 0.25, b: 0.25, a: 0.95}
+  customDangerRadius: 0
 --- !u!1001 &962931237
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20448,7 +20452,7 @@ PrefabInstance:
     - target: {fileID: 1931856272950024225, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: walkSpeed
-      value: 50
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1931856272950024225, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
@@ -20688,7 +20692,15 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6001820041929124501, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1556592835}
+    - targetCorrespondingSourceObject: {fileID: 6001820041929124501, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1556592834}
   m_SourcePrefab: {fileID: 100100000, guid: 1a6d34e690ff9b646ac41162b0941bb5, type: 3}
 --- !u!95 &1556592816 stripped
 Animator:
@@ -20720,6 +20732,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b6ab91cbf65a1d44889df00792761dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!136 &1556592834
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525741658}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.1502639
+  m_Height: 1.00216
+  m_Direction: 2
+  m_Center: {x: 0.0000006274681, y: 0.08026394, z: 0.07383476}
+--- !u!114 &1556592835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525741658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fa7fc7603da17b478bbebaa94e83186, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isFeignDead: 0
+  isDetected: 0
+  toggleKey: 99
+  sightCheckDistance: 12
+  sightFovAngle: 80
+  sightObstructionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  proneCapsule: {fileID: 1556592834}
+  corpseCheckRadius: 2
+  corpseNearDist: 3
+  corpseNearPanicThreshold: 70
+  openGroundDist: 7
+  openGroundPanicThreshold: 30
+  detectionScanInterval: 0.25
+  feignCooldown: 2
+  standUpTriggerName: StandUp
 --- !u!1001 &1558432093
 PrefabInstance:
   m_ObjectHideFlags: 0

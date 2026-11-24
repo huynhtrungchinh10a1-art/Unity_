@@ -341,6 +341,13 @@ public class NPCCombat : MonoBehaviour
         if (h == null) return false;
         if (h == myHealth) return false;
         if (!h.isAlive) return false;
+
+        // Player đang giả chết và chưa bị phát hiện -> Bỏ qua coi như xác chết
+        if (h.CompareTag("Player") && PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead && !PlayerFeignDeath.Instance.IsDetected)
+        {
+            return false;
+        }
+
         return myHealth.IsEnemy(h.teamCurrent);
     }
 
@@ -411,20 +418,34 @@ public class NPCCombat : MonoBehaviour
         // 1. Ưu tiên số 1: Đang trong thời gian DUEL với kẻ vừa đánh mình -> Khóa mục tiêu vào kẻ đó!
         if (duelTarget != null && duelTarget.isAlive)
         {
-            if (debugTargeting)
-                Debug.Log($"<color=cyan>[NPC {name}] [DUEL] Đang bị giữ chân đánh {duelTarget.name} (còn {duelTimer:F1}s)</color>");
-            return duelTarget;
+            if (duelTarget.CompareTag("Player") && PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead && !PlayerFeignDeath.Instance.IsDetected)
+            {
+                duelTarget = null;
+            }
+            else
+            {
+                if (debugTargeting)
+                    Debug.Log($"<color=cyan>[NPC {name}] [DUEL] Đang bị giữ chân đánh {duelTarget.name} (còn {duelTimer:F1}s)</color>");
+                return duelTarget;
+            }
         }
 
         // 2. Ưu tiên số 2: Fury Mode nếu bị Player đánh -> Dí Player
         if (isFuryMode && playerHealth != null && playerHealth.isAlive && myHealth.IsEnemy(playerHealth.teamCurrent))
         {
-            float distToPlayer = Vector3.Distance(transform.position, playerObject.transform.position);
-            if (distToPlayer <= currentDetectionRange)
+            if (PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead && !PlayerFeignDeath.Instance.IsDetected)
             {
-                if (debugTargeting)
-                    Debug.Log($"<color=red>[NPC {name}] [FURY] Đang kích hoạt Fury lên Player!</color>");
-                return playerHealth;
+                isFuryMode = false;
+            }
+            else
+            {
+                float distToPlayer = Vector3.Distance(transform.position, playerObject.transform.position);
+                if (distToPlayer <= currentDetectionRange)
+                {
+                    if (debugTargeting)
+                        Debug.Log($"<color=red>[NPC {name}] [FURY] Đang kích hoạt Fury lên Player!</color>");
+                    return playerHealth;
+                }
             }
         }
 
@@ -608,6 +629,15 @@ public class NPCCombat : MonoBehaviour
             controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
             agent.nextPosition = transform.position;
             isApproaching = true;
+            return;
+        }
+
+        // Nếu mục tiêu hiện tại là Player đang giả chết và chưa bị phát hiện -> Hủy mục tiêu ngay
+        if (currentTargetHealth.CompareTag("Player") && PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead && !PlayerFeignDeath.Instance.IsDetected)
+        {
+            ClearTarget();
+            controller.Move(Vector3.up * verticalVelocity * Time.deltaTime);
+            agent.nextPosition = transform.position;
             return;
         }
 
@@ -939,6 +969,18 @@ public class NPCCombat : MonoBehaviour
     {
         if (currentTarget != null && currentTarget.gameObject == deadTarget)
             ClearTarget();
+    }
+
+    public void OnTargetResurrected(GameObject target)
+    {
+        if (target == null) return;
+        HealthAndTeam targetHealth = target.GetComponent<HealthAndTeam>();
+        if (targetHealth != null && targetHealth.isAlive && myHealth.IsEnemy(targetHealth.teamCurrent))
+        {
+            SwitchToTarget(targetHealth);
+            commitTimer = Time.time + commitLockTime;
+            lastSwitchTime = Time.time;
+        }
     }
 
     public void OnDie()

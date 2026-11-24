@@ -503,8 +503,10 @@ public class PlayerPanicSystem : MonoBehaviour
         if (breathingAudioSource != null && breathingAudioSource.clip != null)
         {
             // Âm lượng tiếng thở tăng dần theo độ sợ hãi: Sợ = 0 thì thở nhẹ (12%), Sợ = 100 thì thở dốc cực to (100%)
+            // Khi đang nằm giả chết: TẮT hoàn toàn tiếng thở để nín thở im lìm, chỉ giữ lại tiếng tim đập thình thịch!
+            bool isFeignDead = (PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead);
             float panicVolMultiplier = Mathf.Lerp(minBreathingVolRatio, 1.0f, PanicNormalized);
-            float targetBreathingVol = (isRunning && isMoving) ? (breathingVolume * panicVolMultiplier) : 0f;
+            float targetBreathingVol = (!isFeignDead && isRunning && isMoving) ? (breathingVolume * panicVolMultiplier) : 0f;
 
             breathingAudioSource.pitch = Mathf.Lerp(0.95f, 1.3f, PanicNormalized);
             breathingAudioSource.volume = Mathf.MoveTowards(breathingAudioSource.volume, targetBreathingVol, audioFadeSpeed * Time.deltaTime);

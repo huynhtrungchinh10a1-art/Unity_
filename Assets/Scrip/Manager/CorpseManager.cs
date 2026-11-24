@@ -52,6 +52,55 @@ public class CorpseManager : MonoBehaviour
     private List<Matrix4x4> visibleBuffer = new List<Matrix4x4>(BATCH_SIZE);
     private Matrix4x4[] drawArray = new Matrix4x4[BATCH_SIZE];
 
+
+    public bool IsNearAnyCorpse(Vector3 pos, float radius = 2.0f)
+    {
+        if (corpseGroups.Count == 0) return false;
+
+        float radiusSq = radius * radius;
+
+        foreach (var kvp in corpseGroups)
+        {
+            // Bỏ qua các nhóm vũ khí rơi, chỉ quét xác lính
+            if (kvp.Key.StartsWith("Weapon_")) continue;
+
+            CorpseGroup group = kvp.Value;
+            if (group == null) continue;
+
+            // 1. Quét các batch đã đóng gói
+            for (int b = 0; b < group.batches.Count; b++)
+            {
+                List<Matrix4x4> batch = group.batches[b];
+                int count = batch.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    Matrix4x4 m = batch[i];
+                    float dx = m.m03 - pos.x;
+                    float dz = m.m23 - pos.z;
+                    if ((dx * dx + dz * dz) <= radiusSq)
+                    {
+                        return true; 
+                    }
+                }
+            }
+
+            // 2. Quét batch hiện tại đang nạp
+            int curCount = group.currentBatch.Count;
+            for (int i = 0; i < curCount; i++)
+            {
+                Matrix4x4 m = group.currentBatch[i];
+                float dx = m.m03 - pos.x;
+                float dz = m.m23 - pos.z;
+                if ((dx * dx + dz * dz) <= radiusSq)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     void Awake()
     {
         if (_instance != null && _instance != this)

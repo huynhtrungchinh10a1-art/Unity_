@@ -48,8 +48,8 @@ public class PlayerCombat : MonoBehaviour
 
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
 
-        // Chặn nhận input đánh khi đang Roll, dính đòn (Impact) hoặc đã Chết
-        if (state.IsTag("Roll") || state.IsTag("Impact") || state.IsTag("Dead"))
+        // Chặn nhận input đánh khi đang Roll, dính đòn (Impact), đã Chết hoặc đang Giả Chết
+        if (state.IsTag("Roll") || state.IsTag("Impact") || state.IsTag("Dead") || (PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead))
         {
             bufferTimer = 0f;
             return;
@@ -138,7 +138,8 @@ public class PlayerCombat : MonoBehaviour
         if (health != null && (!health.isAlive || health.currentHealth <= 0)) return;
 
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
-        if (state.IsTag("Roll") || state.IsTag("Dead")) return;
+        bool isActualDead = state.IsTag("Dead") && (PlayerFeignDeath.Instance == null || !PlayerFeignDeath.Instance.IsFeignDead);
+        if (state.IsTag("Roll") || isActualDead) return;
 
         // Giãn cách tối thiểu giữa 2 lần giật đòn (0.2s), cho phép ngắt đòn cũ nếu đòn mới tới
         if (Time.time - lastImpactTime < impactCooldown)

@@ -61,6 +61,14 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        // Khi đang giả chết: Khóa di chuyển thường bằng code, nhưng VẪN PHẢI CHẠY TRỌNG LỰC ĐỂ HÚT SÁT MẶT ĐẤT
+        if (PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead)
+        {
+            HandleGravity();
+            anim.applyRootMotion = true;
+            return;
+        }
+
         AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
         AnimatorStateInfo next = anim.GetNextAnimatorStateInfo(0);
 
@@ -301,6 +309,8 @@ public class PlayerMovement : MonoBehaviour
     // GRAVITY
     void HandleGravity()
     {
+        if (controller == null || !controller.enabled) return;
+
         if (controller.isGrounded)
             verticalVelocity = -2f;
         else
@@ -322,7 +332,7 @@ public class PlayerMovement : MonoBehaviour
         if (rolling)
         {
             HandleRollCollision();
-            controller.Move(delta);
+            if (controller != null && controller.enabled) controller.Move(delta);
             wasRollingLastFrame = true;
         }
         else
@@ -331,7 +341,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 RestoreRollCollision();
             }
-            controller.Move(delta);
+            if (controller != null && controller.enabled) controller.Move(delta);
         }
 
         transform.rotation *= anim.deltaRotation;
