@@ -53,6 +53,10 @@ public class DamageHitbox : MonoBehaviour
         if (hitTargets.Contains(other.gameObject)) return;
 
         HealthAndTeam targetHealth = other.GetComponent<HealthAndTeam>();
+        if (targetHealth == null)
+        {
+            targetHealth = other.GetComponentInParent<HealthAndTeam>();
+        }
         if (targetHealth != null && targetHealth.isAlive)
         {
             if (ownerHealth.IsEnemy(targetHealth.teamCurrent))

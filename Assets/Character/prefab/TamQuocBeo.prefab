@@ -473,12 +473,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 26.712
+      value: 32.47
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 123.5
+      value: 86.65
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
@@ -707,7 +707,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1082271958561512970, guid: a37011616db511843960ac534cc0a61d,
         type: 3}
@@ -977,7 +977,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   teamCurrent: 0
-  maxHealth: 100
+  maxHealth: 5
   currentHealth: 0
   isAlive: 1
   attackerCount: 0
@@ -1029,6 +1029,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 4
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []

@@ -863,6 +863,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -1694,6 +1695,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -5846,6 +5848,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -9411,8 +9414,8 @@ MonoBehaviour:
     type: 3}
   teamBArcherPrefab: {fileID: 7550338051963361743, guid: ee3ac97b13a4fb14cad99cd8bdfa949f,
     type: 3}
-  swordCountPerTeam: 1500
-  archerCountPerTeam: 1000
+  swordCountPerTeam: 3000
+  archerCountPerTeam: 2000
   unitsPerRow: 100
   spacingX: 3.2
   spacingZ: 6
@@ -9425,9 +9428,9 @@ MonoBehaviour:
   enable3ZoneSpawning: 1
   zone1AreaRatio: 0.2
   zone2AreaRatio: 0.5
-  zone1TroopCount: 500
-  zone2TroopCount: 3250
-  zone3TroopCount: 1250
+  zone1TroopCount: 1000
+  zone2TroopCount: 6500
+  zone3TroopCount: 2500
   realisticFrontlineTeams: 0
   corner1: {fileID: 1856939290}
   corner2: {fileID: 879025716}
@@ -9436,13 +9439,13 @@ MonoBehaviour:
   snapToGround: 1
   raycastStartHeight: 60
   groundOffset: 0.05
-  spawnOnStart: 0
+  spawnOnStart: 1
   spawnInBatches: 1
   spawnsPerFrame: 350
   syncWithLoadingScreen: 1
   randomizeInitialHealth: 1
-  minHealthPercent: 0.025
-  maxHealthPercent: 0.035
+  minHealthPercent: 0.65
+  maxHealthPercent: 0.85
   currentSpawnedCount: 0
   isSpawning: 0
 --- !u!4 &680448948
@@ -11259,6 +11262,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -12673,6 +12677,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -14221,12 +14226,6 @@ Transform:
   - {fileID: 157743049}
   m_Father: {fileID: 1822596622}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &985338964 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6488879408662046624, guid: 0827f8b1f311b4142b90d8e12344bda2,
-    type: 3}
-  m_PrefabInstance: {fileID: 1817873226}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &997814150 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4184855787190570311, guid: 0827f8b1f311b4142b90d8e12344bda2,
@@ -14412,6 +14411,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -15697,12 +15697,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 608321761475470972, guid: 7db962f2a3faf5b438598d97e01e4da2,
     type: 3}
   m_PrefabInstance: {fileID: 745973610}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &1118202990 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 101105930814509011, guid: 0827f8b1f311b4142b90d8e12344bda2,
-    type: 3}
-  m_PrefabInstance: {fileID: 1817873226}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1123651083
 GameObject:
@@ -17840,6 +17834,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -19264,6 +19259,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -20429,6 +20425,26 @@ PrefabInstance:
       propertyPath: m_IsTrigger
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1091327092696509645, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startSizeY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1091327092696509645, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startSizeZ.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1091327092696509645, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startRotationX.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1091327092696509645, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startRotationY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 1609045481469957851, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: m_IsActive
@@ -20617,7 +20633,7 @@ PrefabInstance:
     - target: {fileID: 6176184778323767338, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6341471984810012719, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
@@ -20687,7 +20703,32 @@ PrefabInstance:
     - target: {fileID: 7506817507104346469, guid: 1a6d34e690ff9b646ac41162b0941bb5,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7712538410823333241, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startColor.maxColor.a
+      value: 0.21568628
+      objectReference: {fileID: 0}
+    - target: {fileID: 7712538410823333241, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startSizeY.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7712538410823333241, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startSizeZ.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7712538410823333241, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startRotationX.minMaxState
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7712538410823333241, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      propertyPath: InitialModule.startRotationY.minMaxState
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -20701,6 +20742,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1556592834}
+    - targetCorrespondingSourceObject: {fileID: 6001820041929124501, guid: 1a6d34e690ff9b646ac41162b0941bb5,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1556592842}
   m_SourcePrefab: {fileID: 100100000, guid: 1a6d34e690ff9b646ac41162b0941bb5, type: 3}
 --- !u!95 &1556592816 stripped
 Animator:
@@ -20749,7 +20794,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.1502639
   m_Height: 1.00216
@@ -20770,7 +20815,7 @@ MonoBehaviour:
   isFeignDead: 0
   isDetected: 0
   toggleKey: 99
-  sightCheckDistance: 12
+  sightCheckDistance: 16
   sightFovAngle: 80
   sightObstructionMask:
     serializedVersion: 2
@@ -20784,6 +20829,33 @@ MonoBehaviour:
   detectionScanInterval: 0.25
   feignCooldown: 2
   standUpTriggerName: StandUp
+--- !u!54 &1556592842
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1525741658}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &1558432093
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22971,6 +23043,7 @@ MonoBehaviour:
   rotationSpeed: 5
   attackAngle: 30
   attackCooldownTimer: 0
+  feignDeathAttackRange: 2
   separationDistance: 2.5
   separationForce: 5
   equippedWeapons: []
@@ -23982,11 +24055,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: TamQuocBeo (1)
       objectReference: {fileID: 0}
-    - target: {fileID: 3555671646659090429, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4184855787190570311, guid: 0827f8b1f311b4142b90d8e12344bda2,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -24036,36 +24104,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: debugTargeting
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: equippedWeapons.Array.size
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: equippedWeapons.Array.data[0]
-      value: 
-      objectReference: {fileID: 1118202990}
-    - target: {fileID: 7656664835838591549, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: equippedWeapons.Array.data[1]
-      value: 
-      objectReference: {fileID: 985338964}
-    - target: {fileID: 9098102405717949482, guid: 0827f8b1f311b4142b90d8e12344bda2,
-        type: 3}
-      propertyPath: isAlive
-      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25656,21 +25694,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: TamQuocBeo
-      objectReference: {fileID: 0}
-    - target: {fileID: 8039068903539534601, guid: e794039381c05e24cb2508de68d6e2cf,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578329933304331076, guid: e794039381c05e24cb2508de68d6e2cf,
-        type: 3}
-      propertyPath: maxHealth
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8578329933304331076, guid: e794039381c05e24cb2508de68d6e2cf,
-        type: 3}
-      propertyPath: currentHealth
-      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -65,6 +65,7 @@ public class NPCCombat : MonoBehaviour
     public float rotationSpeed = 5f;
     public float attackAngle = 30f;
     public float attackCooldownTimer = 0f;
+    public float feignDeathAttackRange = 2.0f;
 
     [Header("Separation")]
     public float separationDistance = 2.5f;
@@ -554,6 +555,7 @@ public class NPCCombat : MonoBehaviour
         currentTarget = newTarget.transform;
         currentTargetHealth = newTarget;
         newTarget.AddAttacker(gameObject);
+        isApproaching = true;
     }
 
     protected void SafeResetPath()
@@ -651,15 +653,59 @@ public class NPCCombat : MonoBehaviour
             return;
         }
 
-        // Hysteresis chống khựng giật/chatter khi player đi vòng quanh ở rìa attackRange
+        bool isTargetFeignDead = currentTargetHealth.CompareTag("Player") &&
+                                 PlayerFeignDeath.Instance != null &&
+                                 PlayerFeignDeath.Instance.IsFeignDead;
+
+        float effectiveAttackRange = isTargetFeignDead ? feignDeathAttackRange : attackRange;
+
+        // XỬ LÝ LÙI LẤY ĐÀ (BACKSTEP):
+        // Nếu mục tiêu là Player giả chết mà NPC đang đứng quá gần (< feignDeathAttackRange - 0.2m)
+        // -> NPC lùi lại nhẹ để căn đúng cự ly lấy đà trước khi tung đòn nhảy bổ cắm kiếm
+        if (isTargetFeignDead && dist < feignDeathAttackRange - 0.2f)
+        {
+            SafeResetPath();
+            if (agent != null)
+            {
+                agent.velocity = Vector3.zero;
+            }
+
+            Vector3 awayDir = (transform.position - currentTarget.position);
+            awayDir.y = 0;
+            if (awayDir.sqrMagnitude < 0.001f)
+            {
+                awayDir = -transform.forward;
+            }
+            else
+            {
+                awayDir.Normalize();
+            }
+
+            // Luôn quay mặt nhìn về phía Player trong khi lùi
+            Vector3 faceDir = -awayDir;
+            if (faceDir.sqrMagnitude > 0.01f)
+            {
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(faceDir), Mathf.Max(rotationSpeed, 10f) * Time.deltaTime);
+            }
+
+            // Di chuyển lùi với tốc độ walkSpeed
+            Vector3 backVel = awayDir * walkSpeed;
+            backVel.y = verticalVelocity;
+            controller.Move(backVel * Time.deltaTime);
+
+            agent.nextPosition = transform.position;
+            return;
+        }
+
+        // Hysteresis chống khựng giật/chatter khi player đi vòng quanh ở rìa effectiveAttackRange
         if (isApproaching)
         {
-            if (dist <= attackRange)
+            if (dist <= effectiveAttackRange)
                 isApproaching = false;
         }
         else
         {
-            if (dist > attackRange + 0.4f)
+            if (dist > effectiveAttackRange + 0.4f)
                 isApproaching = true;
         }
 
@@ -974,12 +1020,14 @@ public class NPCCombat : MonoBehaviour
     public void OnTargetResurrected(GameObject target)
     {
         if (target == null) return;
-        HealthAndTeam targetHealth = target.GetComponent<HealthAndTeam>();
+        HealthAndTeam targetHealth = target.GetComponentInParent<HealthAndTeam>();
         if (targetHealth != null && targetHealth.isAlive && myHealth.IsEnemy(targetHealth.teamCurrent))
         {
             SwitchToTarget(targetHealth);
             commitTimer = Time.time + commitLockTime;
             lastSwitchTime = Time.time;
+            isApproaching = true;
+            attackCooldownTimer = Mathf.Min(attackCooldownTimer, 0.2f);
         }
     }
 
@@ -1224,11 +1272,27 @@ public class NPCCombat : MonoBehaviour
 
         if (currentTarget == null || currentTargetHealth == null || !currentTargetHealth.isAlive) return;
 
+        bool isTargetFeignDead = currentTargetHealth.CompareTag("Player") &&
+                                 PlayerFeignDeath.Instance != null &&
+                                 PlayerFeignDeath.Instance.IsFeignDead;
+
+        float effectiveAttackRange = isTargetFeignDead ? feignDeathAttackRange : attackRange;
         float dist = Vector3.Distance(transform.position, currentTarget.position);
-        if (dist <= attackRange)
+
+        // Nếu là mục tiêu giả chết mà vẫn đang trong quá trình lùi lấy đà thì chưa vội ra đòn
+        if (isTargetFeignDead && dist < feignDeathAttackRange - 0.3f)
+        {
+            return;
+        }
+
+        if (dist <= effectiveAttackRange + 0.35f)
         {
             Vector3 direction = (currentTarget.position - transform.position).normalized;
             direction.y = 0;
+            if (direction == Vector3.zero)
+            {
+                direction = transform.forward;
+            }
 
             if (direction != Vector3.zero)
             {
@@ -1248,6 +1312,13 @@ public class NPCCombat : MonoBehaviour
                     }
 
                     int attackIndex = Random.Range(0, 5);
+
+                    // Khi mục tiêu là Player đang nằm giả chết: Luôn dùng đòn nhảy chém bổ xuống đất (attackIndex = 1)
+                    if (isTargetFeignDead)
+                    {
+                        attackIndex = 1;
+                    }
+
                     if (animHandler != null)
                         animHandler.PlayAttack(attackIndex);
 

@@ -40,6 +40,7 @@ public class PlayerFeignDeath : MonoBehaviour
 
     private HealthAndTeam myHealth;
     private CharacterController controller;
+    private Rigidbody rb;
     private Animator anim;
     private PlayerMovement movement;
     private PlayerCombat combat;
@@ -55,6 +56,13 @@ public class PlayerFeignDeath : MonoBehaviour
 
         myHealth = GetComponent<HealthAndTeam>();
         controller = GetComponent<CharacterController>();
+        rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+            rb.detectCollisions = false; // Mặc định tắt va chạm khi đứng để không ảnh hưởng CharacterController
+        }
         anim = GetComponentInChildren<Animator>();
         movement = GetComponent<PlayerMovement>();
         combat = GetComponent<PlayerCombat>();
@@ -81,6 +89,14 @@ public class PlayerFeignDeath : MonoBehaviour
         {
             myHealth.onDamaged += OnDamagedWhileFeign;
             myHealth.onDie += OnDieWhileFeign;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (rb != null)
+        {
+            rb.detectCollisions = false;
         }
     }
 
@@ -159,16 +175,8 @@ public class PlayerFeignDeath : MonoBehaviour
             return false;
         }
 
-        // 1. Kiểm tra tầm nhìn trực diện của kẻ địch (Line of Sight)
-        if (IsWatchedByEnemy(out HealthAndTeam watchingEnemy))
-        {
-            Debug.Log($"<color=yellow>[FeignDeath] Không thể giả chết! Kẻ địch {watchingEnemy.gameObject.name} đang nhìn chằm chằm vào bạn!</color>");
-            return false;
-        }
-
-        // 2. Kích hoạt giả chết thành công!
+        // BẮT ĐẦU NẰM GIẢ CHẾT
         isFeignDead = true;
-        isDetected = false;
         detectionTimer = detectionScanInterval;
 
         // Chọn ngẫu nhiên 1 trong 3 thế chết
@@ -189,10 +197,25 @@ public class PlayerFeignDeath : MonoBehaviour
             proneCapsule.enabled = true;
         }
 
-        // Bỏ toàn bộ kẻ thù đang nhắm vào mình (Drop Aggro)
-        DropAllCurrentAttackers();
+        // 3. Bật Rigidbody để nhận va chạm với vũ khí kẻ địch khi đang nằm
+        if (rb != null)
+        {
+            rb.detectCollisions = true;
+        }
 
-        Debug.Log("<color=green>[FeignDeath] Đã nằm giả chết thành công! Kẻ địch hủy mục tiêu.</color>");
+        // 3. Kiểm tra xem có kẻ địch nào đang nhìn thấy hoặc đang nhắm vào Player không
+        if (IsWatchedByEnemy(out HealthAndTeam watchingEnemy))
+        {
+            // BỊ NHÌN THẤY: Vẫn cho nằm giả chết, nhưng kẻ địch không bị lừa mà sẽ lập tức lao vào tấn công!
+            TriggerDetected(watchingEnemy);
+        }
+        else
+        {
+            // KHÔNG AI NHÌN THẤY: Giả chết thành công, kẻ địch hủy mục tiêu!
+            isDetected = false;
+            DropAllCurrentAttackers();
+        }
+
         return true;
     }
 
@@ -201,6 +224,32 @@ public class PlayerFeignDeath : MonoBehaviour
         watchingEnemy = null;
         Vector3 playerHeadPos = transform.position + Vector3.up * 1.0f;
 
+        // 1. Kiểm tra các kẻ địch đang chủ động tấn công Player (Current Attackers) trong tầm nhìn
+        if (myHealth != null && myHealth.currentAttackers != null && myHealth.currentAttackers.Count > 0)
+        {
+            for (int i = 0; i < myHealth.currentAttackers.Count; i++)
+            {
+                GameObject attacker = myHealth.currentAttackers[i];
+                if (attacker == null) continue;
+                HealthAndTeam attH = attacker.GetComponentInParent<HealthAndTeam>();
+                if (attH != null && attH.isAlive && myHealth.IsEnemy(attH.teamCurrent))
+                {
+                    Vector3 enemyEyePos = attH.transform.position + Vector3.up * 1.4f;
+                    float dist = Vector3.Distance(enemyEyePos, playerHeadPos);
+                    if (dist <= sightCheckDistance)
+                    {
+                        // Cự ly cận chiến (< 4m) đang đánh nhau -> Chắc chắn thấy player ngã trước mặt
+                        if (dist <= 4.0f || HasLineOfSight(enemyEyePos, playerHeadPos, attH.transform))
+                        {
+                            watchingEnemy = attH;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Quét các kẻ địch xung quanh trong bán kính sightCheckDistance
         int hitCount = Physics.OverlapSphereNonAlloc(transform.position, sightCheckDistance, scanColliders, characterLayerMask);
         for (int i = 0; i < hitCount; i++)
         {
@@ -210,6 +259,8 @@ public class PlayerFeignDeath : MonoBehaviour
             HealthAndTeam h = col.GetComponentInParent<HealthAndTeam>();
             if (h == null || h == myHealth || !h.isAlive || !myHealth.IsEnemy(h.teamCurrent)) continue;
 
+            NPCCombat npcCombat = h.GetComponent<NPCCombat>();
+
             Vector3 enemyEyePos = h.transform.position + Vector3.up * 1.4f;
             Vector3 toPlayer = playerHeadPos - enemyEyePos;
             float dist = toPlayer.magnitude;
@@ -217,12 +268,25 @@ public class PlayerFeignDeath : MonoBehaviour
 
             Vector3 dirToPlayer = toPlayer.normalized;
 
-            // Kiểm tra góc nhìn phía trước của địch (FOV)
-            float angle = Vector3.Angle(h.transform.forward, dirToPlayer);
-            if (angle <= sightFovAngle * 0.5f)
+            // A. Nếu kẻ địch này đã khóa mục tiêu vào Player -> Thấy rõ ràng
+            if (npcCombat != null && npcCombat.CurrentTargetHealth == myHealth)
             {
-                // Bắn Raycast kiểm tra đường nhìn có bị tường/địa hình cản không
-                if (!Physics.Raycast(enemyEyePos, dirToPlayer, dist, sightObstructionMask, QueryTriggerInteraction.Ignore))
+                if (dist <= 4.0f || HasLineOfSight(enemyEyePos, playerHeadPos, h.transform))
+                {
+                    watchingEnemy = h;
+                    return true;
+                }
+            }
+
+            // B. Kiểm tra góc nhìn phía trước của địch (FOV)
+            // Nếu đứng rất sát (< 3.5m) và quay mặt về phía người chơi (< 85 độ) -> Thấy ngay!
+            // Nếu xa hơn -> Kiểm tra FOV tiêu chuẩn (mặc định 60-80 độ) và Raycast
+            float angle = Vector3.Angle(h.transform.forward, dirToPlayer);
+            float maxFovAngle = (dist <= 3.5f) ? 85f : Mathf.Max(sightFovAngle * 0.5f, 60f);
+
+            if (angle <= maxFovAngle)
+            {
+                if (dist <= 3.0f || HasLineOfSight(enemyEyePos, playerHeadPos, h.transform))
                 {
                     watchingEnemy = h;
                     return true; // Có địch đang nhìn thấy rõ ràng!
@@ -231,6 +295,34 @@ public class PlayerFeignDeath : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool HasLineOfSight(Vector3 fromPos, Vector3 toPos, Transform enemyRoot)
+    {
+        Vector3 dir = toPos - fromPos;
+        float dist = dir.magnitude;
+        if (dist < 0.2f) return true;
+
+        RaycastHit[] hits = Physics.RaycastAll(fromPos, dir.normalized, dist, sightObstructionMask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i].collider;
+            if (col == null || col.isTrigger) continue;
+
+            // Bỏ qua chính Player và trang bị / vũ khí của Player
+            if (col.transform.root == transform) continue;
+
+            // Bỏ qua chính kẻ địch và trang bị / vũ khí của kẻ địch
+            if (enemyRoot != null && col.transform.root == enemyRoot) continue;
+
+            // Bỏ qua các nhân vật khác (Character layer)
+            if (col.gameObject.layer == LayerMask.NameToLayer("Character")) continue;
+
+            // Trúng vật cản môi trường thực sự (tường, nhà, đá, địa hình)
+            return false;
+        }
+
+        return true;
     }
 
     private void DropAllCurrentAttackers()
@@ -276,11 +368,17 @@ public class PlayerFeignDeath : MonoBehaviour
 
             // QUY TẮC PHÁT HIỆN ĐỘNG (Dựa trên trần Panic và khoảng cách):
             // 1. Nằm gần xác (bất kể phe ta hay phe địch): Địch áp sát < 3m
+            //    - Quá sát sạt (< 1.0m dẫm lên người): Bị phát hiện ngay!
             //    - Trần: Panic >= 70% -> 100% chắc chắn bị phát hiện!
             //    - Dưới 70%: Nguy cơ bị phát hiện tăng dần tỉ lệ thuận theo Panic và khoảng cách
             if (isNearCorpse)
             {
-                if (dist <= corpseNearDist)
+                if (dist <= 1.0f)
+                {
+                    TriggerDetected(h);
+                    break;
+                }
+                else if (dist <= corpseNearDist)
                 {
                     if (currentPanic >= corpseNearPanicThreshold)
                     {
@@ -301,11 +399,17 @@ public class PlayerFeignDeath : MonoBehaviour
                 }
             }
             // 2. Nằm trơ trọi (không gần xác): Địch áp sát < 7m
+            //    - Quá sát sạt (< 1.5m): Bị phát hiện ngay!
             //    - Trần: Panic >= 30% -> 100% chắc chắn bị phát hiện!
             //    - Dưới 30%: Nguy cơ bị phát hiện tăng dần tỉ lệ thuận theo Panic và khoảng cách
             else
             {
-                if (dist <= openGroundDist)
+                if (dist <= 1.5f)
+                {
+                    TriggerDetected(h);
+                    break;
+                }
+                else if (dist <= openGroundDist)
                 {
                     if (currentPanic >= openGroundPanicThreshold)
                     {
@@ -333,29 +437,21 @@ public class PlayerFeignDeath : MonoBehaviour
         isDetected = true;
         Debug.Log($"<color=red>[FeignDeath] BỊ PHÁT HIỆN! Kẻ địch {spotter.gameObject.name} nhận ra bạn còn sống và lao vào chém!</color>");
 
-        // Kẻ địch phát hiện đổi target sang Player
-        NPCCombat spotterCombat = spotter.GetComponent<NPCCombat>();
-        if (spotterCombat != null)
+        // 1. Kẻ địch trực tiếp phát hiện bạn sẽ lập tức khóa mục tiêu và chém ngay lập tức
+        if (spotter != null)
         {
-            spotterCombat.OnTargetResurrected(gameObject);
-        }
-
-        // Đồng thời báo động cho các kẻ địch khác trong bán kính 6m
-        int hitCount = Physics.OverlapSphereNonAlloc(transform.position, 6f, scanColliders, characterLayerMask);
-        for (int i = 0; i < hitCount; i++)
-        {
-            Collider col = scanColliders[i];
-            if (col == null) continue;
-            HealthAndTeam h = col.GetComponentInParent<HealthAndTeam>();
-            if (h != null && h != myHealth && h.isAlive && myHealth.IsEnemy(h.teamCurrent))
+            NPCCombat spotterCombat = spotter.GetComponent<NPCCombat>();
+            if (spotterCombat != null)
             {
-                NPCCombat npc = h.GetComponent<NPCCombat>();
-                if (npc != null)
-                {
-                    npc.OnTargetResurrected(gameObject);
-                }
+                spotterCombat.OnTargetResurrected(gameObject);
+                spotterCombat.attackCooldownTimer = 0f;
             }
         }
+
+        // 2. Với các kẻ địch khác xung quanh:
+        // Vì isDetected đã bật thành true, hệ thống AI (DecideTarget) ở vòng quét tiếp theo sẽ tự động nhận diện Player là mục tiêu hợp lệ.
+        // Tuy nhiên sẽ TUÂN THỦ giới hạn maxAttackersPerTarget (tối đa 3 tên cận chiến bu vào 1 lúc)
+        // và ai đang bận Duel với đồng đội thì không bị ép bỏ dở giữa chừng.
     }
 
     [Header("Animation Triggers (Điều khiển bằng Animator Parameters)")]
@@ -396,16 +492,22 @@ public class PlayerFeignDeath : MonoBehaviour
         isDetected = false;
         lastExitTime = Time.time;
 
-        // Khôi phục và Bật lại CharacterController khi đứng dậy
-        if (controller != null)
+        // 1. Tắt Rigidbody detectCollisions ngay lập tức trước khi bật lại controller
+        if (rb != null)
         {
-            controller.enabled = true;
+            rb.detectCollisions = false;
         }
 
-        // Tắt Capsule nằm ngang khi đứng dậy
+        // 2. Tắt Capsule nằm ngang khi đứng dậy
         if (proneCapsule != null)
         {
             proneCapsule.enabled = false;
+        }
+
+        // 3. Khôi phục và Bật lại CharacterController khi đứng dậy
+        if (controller != null)
+        {
+            controller.enabled = true;
         }
 
         if (interruptedByDamage && anim != null)
