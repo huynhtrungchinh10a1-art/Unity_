@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(CharacterController))]
@@ -21,6 +22,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Roll")]
     public float rollCooldown = 5f;
     private float lastRollTime = -10f;
+    [Header("Roll UI")]
+    public Image rollCooldownImage;
+    public Text rollCooldownText;
     private List<Collider> ignoredColliders = new List<Collider>();
     private bool wasRollingLastFrame = false;
 
@@ -55,6 +59,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        UpdateRollCooldownUI();
+
         if (isDead)
         {
             anim.applyRootMotion = true;
@@ -85,7 +91,23 @@ public class PlayerMovement : MonoBehaviour
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
 
-        bool isRunning = Input.GetKey(KeyCode.LeftShift);
+        Vector3 inputDir = new Vector3(h, 0, v);
+
+        // CHẶN đi lùi trong free mode
+        if (!cam.IsLocked() && inputDir.z < 0)
+        {
+            inputDir.z = 0;
+        }
+
+        // tránh chạy chéo vượt tốc độ
+        float inputMagnitude = Mathf.Clamp01(inputDir.magnitude);
+        bool isMoving = inputMagnitude > 0.1f;
+
+        anim.SetBool("IsMoving", isMoving);
+
+        // Chỉ tính là chạy khi: bấm Shift + có di chuyển + không đấm + không lăn + không dính đòn
+        bool isAttacking = (combat != null && combat.IsAttacking()) || state.IsTag("Combo");
+        bool isRunning = Input.GetKey(KeyCode.LeftShift) && isMoving && !isAttacking && !isRolling && !isImpact;
         float currentRunSpeed = runSpeed;
 
         if (PlayerPanicSystem.Instance != null)
@@ -102,20 +124,6 @@ public class PlayerMovement : MonoBehaviour
         }
 
         float speed = isRunning ? currentRunSpeed : walkSpeed;
-
-        Vector3 inputDir = new Vector3(h, 0, v);
-
-        // CHẶN đi lùi trong free mode
-        if (!cam.IsLocked() && inputDir.z < 0)
-        {
-            inputDir.z = 0;
-        }
-
-        // tránh chạy chéo vượt tốc độ
-        float inputMagnitude = Mathf.Clamp01(inputDir.magnitude);
-        bool isMoving = inputMagnitude > 0.1f;
-
-        anim.SetBool("IsMoving", isMoving);
 
         bool isLocked = cam.IsLocked();
 
@@ -207,6 +215,32 @@ public class PlayerMovement : MonoBehaviour
     public void TriggerRollManual()
     {
         PerformRoll();
+    }
+
+    private void UpdateRollCooldownUI()
+    {
+        if (rollCooldownImage == null && rollCooldownText == null) return;
+
+        float remaining = rollCooldown - (Time.time - lastRollTime);
+        if (remaining > 0f)
+        {
+            if (rollCooldownImage != null)
+                rollCooldownImage.fillAmount = remaining / rollCooldown;
+
+            if (rollCooldownText != null)
+            {
+                if (!rollCooldownText.gameObject.activeSelf) rollCooldownText.gameObject.SetActive(true);
+                rollCooldownText.text = remaining.ToString("F1");
+            }
+        }
+        else
+        {
+            if (rollCooldownImage != null && rollCooldownImage.fillAmount > 0f)
+                rollCooldownImage.fillAmount = 0f;
+
+            if (rollCooldownText != null && rollCooldownText.gameObject.activeSelf)
+                rollCooldownText.gameObject.SetActive(false);
+        }
     }
 
     // FREE MODE

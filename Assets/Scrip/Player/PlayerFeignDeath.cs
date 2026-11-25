@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(HealthAndTeam))]
@@ -37,6 +38,9 @@ public class PlayerFeignDeath : MonoBehaviour
     [Header("Cooldown")]
     public float feignCooldown = 2.0f;
     private float lastExitTime = -10f;
+    [Header("Cooldown UI")]
+    public Image feignCooldownImage;
+    public Text feignCooldownText;
 
     private HealthAndTeam myHealth;
     private CharacterController controller;
@@ -112,6 +116,8 @@ public class PlayerFeignDeath : MonoBehaviour
 
     void Update()
     {
+        UpdateCooldownUI();
+
         if (myHealth != null && !myHealth.isAlive)
         {
             if (isFeignDead) ExitFeignDeath(false);
@@ -532,6 +538,39 @@ public class PlayerFeignDeath : MonoBehaviour
         if (isFeignDead)
         {
             ExitFeignDeath(false);
+        }
+    }
+
+    private void UpdateCooldownUI()
+    {
+        if (feignCooldownImage == null && feignCooldownText == null) return;
+
+        if (isFeignDead)
+        {
+            if (feignCooldownImage != null && feignCooldownImage.fillAmount > 0f) feignCooldownImage.fillAmount = 0f;
+            if (feignCooldownText != null && feignCooldownText.gameObject.activeSelf) feignCooldownText.gameObject.SetActive(false);
+            return;
+        }
+
+        float remaining = feignCooldown - (Time.time - lastExitTime);
+        if (remaining > 0f)
+        {
+            if (feignCooldownImage != null)
+                feignCooldownImage.fillAmount = remaining / feignCooldown;
+
+            if (feignCooldownText != null)
+            {
+                if (!feignCooldownText.gameObject.activeSelf) feignCooldownText.gameObject.SetActive(true);
+                feignCooldownText.text = remaining.ToString("F1");
+            }
+        }
+        else
+        {
+            if (feignCooldownImage != null && feignCooldownImage.fillAmount > 0f)
+                feignCooldownImage.fillAmount = 0f;
+
+            if (feignCooldownText != null && feignCooldownText.gameObject.activeSelf)
+                feignCooldownText.gameObject.SetActive(false);
         }
     }
 }

@@ -388,7 +388,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0.5686275, g: 0.47058824, b: 0.11764706, a: 0.13725491}
+      maxColor: {r: 0.5686275, g: 0.47058824, b: 0.11764706, a: 0.21568628}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -504,7 +504,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -557,7 +557,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -610,7 +610,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationX:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -663,7 +663,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -5334,7 +5334,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -5387,7 +5387,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -5440,7 +5440,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationX:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -5493,7 +5493,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startRotationY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 0
       minScalar: 0
       maxCurve:
@@ -9846,12 +9846,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: f4dc3e85787ca2042b92c90fbbb011ff,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 13
+      value: 29.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f4dc3e85787ca2042b92c90fbbb011ff,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 151.76305
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f4dc3e85787ca2042b92c90fbbb011ff,
         type: 3}
@@ -10299,6 +10299,18 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 4073268521108264155}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f4dc3e85787ca2042b92c90fbbb011ff,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8239629224989883606}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f4dc3e85787ca2042b92c90fbbb011ff,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4652880562829734813}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f4dc3e85787ca2042b92c90fbbb011ff,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8354960470425018028}
   m_SourcePrefab: {fileID: 100100000, guid: f4dc3e85787ca2042b92c90fbbb011ff, type: 3}
 --- !u!4 &411994158672036359 stripped
 Transform:
@@ -10365,11 +10377,13 @@ MonoBehaviour:
   cam: {fileID: 0}
   anim: {fileID: 1072212950578424405}
   combat: {fileID: 4176273409873066828}
-  walkSpeed: 2.5
-  runSpeed: 7
+  walkSpeed: 5
+  runSpeed: 50
   rotationSpeed: 10
   turnCooldown: 0.8
   rollCooldown: 5
+  rollCooldownImage: {fileID: 0}
+  rollCooldownText: {fileID: 0}
 --- !u!114 &4176273409873066828
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10396,7 +10410,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b6ab91cbf65a1d44889df00792761dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamCurrent: 0
+  teamCurrent: 2
   maxHealth: 1000
   currentHealth: 0
   isAlive: 1
@@ -10447,18 +10461,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentPanic: 0
   maxCourageCap: 100
-  enablePanicDeath: 1
+  enablePanicDeath: 0
   outerZoneRadius: 18
-  dangerZoneRadius: 3.5
+  dangerZoneRadius: 4.5
+  closeAllyRadius: 5.5
   scanInterval: 0.2
   characterLayerMask:
     serializedVersion: 2
     m_Bits: 64
-  panicRatePerOuterEnemy: 1
-  dangerZoneMultiplier: 3.5
-  calmDownRate: 4
-  allyReliefPerPerson: 1.2
-  maxAllyCalmRate: 6
+  panicRatePerOuterEnemy: 0
+  panicRatePerInnerEnemy: 3
+  maxPanicGainRate: 9
+  calmDownRate: 5
+  allyReliefPerPerson: 1
+  maxAllyCalmRate: 8
   playerCamera: {fileID: 0}
   panicOnWitnessAllyDeath: 15
   heartbeatAudioSource: {fileID: 0}
@@ -10466,8 +10482,10 @@ MonoBehaviour:
   heartbeatClip: {fileID: 8300000, guid: bbc6254be2c36064ab5950f0f324d123, type: 3}
   heavyBreathingClip: {fileID: 8300000, guid: 962bdfab0a15fd9459a346b023ada6e8, type: 3}
   breathingVolume: 1
-  minBreathingVolRatio: 0.12
+  minBreathingVolRatio: 0.6
   heartbeatVolume: 1
+  breathingBoost: 1.5
+  heartbeatBoost: 2
   audioFadeSpeed: 4
   heartbeatStartThreshold: 15
   battleAmbienceAudioSource1: {fileID: 0}
@@ -10476,15 +10494,15 @@ MonoBehaviour:
   battleAmbienceAudioSource2: {fileID: 0}
   battleAmbienceClip2: {fileID: 8300000, guid: 332f9d76fd5e8b7478ecd7af039de292, type: 3}
   layer2VolumeScale: 1
-  maxBattleAmbienceVolume: 0.85
+  maxBattleAmbienceVolume: 0.3
   minBattleAmbienceVolume: 0.15
   maxCrowdForFullVolume: 15
   battleAudioFadeSpeed: 2.5
-  freezePanic: 0
+  freezePanic: 1
   postProcessVolume: {fileID: 0}
-  vignetteThreshold: 1
+  vignetteThreshold: 0.5
   basePanicVignetteIntensity: 0.25
-  maxPanicVignetteIntensity: 0.5
+  maxPanicVignetteIntensity: 0.6
   maxPanicUIAlpha: 0.7
   uiPanicVignetteImage: {fileID: 0}
   lowHealthThreshold: 0.4
@@ -10501,9 +10519,91 @@ MonoBehaviour:
   debugOuterEnemies: 0
   debugInnerEnemies: 0
   debugAlliesNearby: 0
+  debugCloseAllies: 0
   debugTrackedAlliesCount: 0
   debugCurrentPanicRate: 0
   debugBattleVolume: 0
+--- !u!114 &8239629224989883606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001820041929124501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fa7fc7603da17b478bbebaa94e83186, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isFeignDead: 0
+  isDetected: 0
+  toggleKey: 99
+  sightCheckDistance: 16
+  sightFovAngle: 80
+  sightObstructionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  proneCapsule: {fileID: 4652880562829734813}
+  corpseCheckRadius: 2
+  corpseNearDist: 3
+  corpseNearPanicThreshold: 70
+  openGroundDist: 7
+  openGroundPanicThreshold: 30
+  detectionScanInterval: 0.25
+  feignCooldown: 15
+  feignCooldownImage: {fileID: 0}
+  feignCooldownText: {fileID: 0}
+  standUpTriggerName: StandUp
+--- !u!136 &4652880562829734813
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001820041929124501}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 2
+  m_Radius: 0.1502639
+  m_Height: 1.00216
+  m_Direction: 2
+  m_Center: {x: 0.0000006274681, y: 0.08026394, z: 0.07383476}
+--- !u!54 &8354960470425018028
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001820041929124501}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!4 &6341471984810012719 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f4dc3e85787ca2042b92c90fbbb011ff,

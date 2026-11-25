@@ -128,6 +128,7 @@ public class PlayerPanicSystem : MonoBehaviour
     public System.Action<float, float> onPanicChanged;
     public float PanicNormalized => Mathf.Clamp01(currentPanic / Mathf.Max(maxCourageCap, 1f));
     private float lastReportedPanic = -1f;
+    private Animator anim;
 
     void Awake()
     {
@@ -139,6 +140,7 @@ public class PlayerPanicSystem : MonoBehaviour
 
         myHealth = GetComponent<HealthAndTeam>();
         controller = GetComponent<CharacterController>();
+        anim = GetComponentInChildren<Animator>();
 
         if (characterLayerMask.value == 0)
             characterLayerMask = LayerMask.GetMask("Character");
@@ -494,11 +496,11 @@ public class PlayerPanicSystem : MonoBehaviour
         if (breathingBooster != null) breathingBooster.boostMultiplier = breathingBoost;
         if (heartbeatBooster != null) heartbeatBooster.boostMultiplier = heartbeatBoost;
 
-        // 1. Thở dốc: Chỉ cần vừa ấn SHIFT vừa ấn phím di chuyển W/A/S/D là kích hoạt ngay!
-        bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
-        bool isMoving = (Mathf.Abs(h) > 0.05f || Mathf.Abs(v) > 0.05f);
+        // 1. Thở dốc: Đọc trực tiếp IsRunning từ Animator (PlayerMovement đã lọc chuẩn xác di chuyển, không đấm, panic < 80)
+        if (anim == null && PlayerMovement.Instance != null)
+            anim = PlayerMovement.Instance.anim;
+
+        bool isRunning = (anim != null) ? anim.GetBool("IsRunning") : false;
 
         if (breathingAudioSource != null && breathingAudioSource.clip != null)
         {
@@ -506,7 +508,7 @@ public class PlayerPanicSystem : MonoBehaviour
             // Khi đang nằm giả chết: TẮT hoàn toàn tiếng thở để nín thở im lìm, chỉ giữ lại tiếng tim đập thình thịch!
             bool isFeignDead = (PlayerFeignDeath.Instance != null && PlayerFeignDeath.Instance.IsFeignDead);
             float panicVolMultiplier = Mathf.Lerp(minBreathingVolRatio, 1.0f, PanicNormalized);
-            float targetBreathingVol = (!isFeignDead && isRunning && isMoving) ? (breathingVolume * panicVolMultiplier) : 0f;
+            float targetBreathingVol = (!isFeignDead && isRunning) ? (breathingVolume * panicVolMultiplier) : 0f;
 
             breathingAudioSource.pitch = Mathf.Lerp(0.95f, 1.3f, PanicNormalized);
             breathingAudioSource.volume = Mathf.MoveTowards(breathingAudioSource.volume, targetBreathingVol, audioFadeSpeed * Time.deltaTime);
